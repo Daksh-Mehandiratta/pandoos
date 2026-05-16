@@ -17,6 +17,14 @@ export interface Badge {
 
 export const ALL_BADGES: Badge[] = [
   {
+    id: 'welcome_panda',
+    name: 'Welcome, Panda!',
+    emoji: '🐾',
+    description: 'You joined the Pandoos family. The vibe starts now!',
+    color: 'from-violet-400 via-pink-400 to-amber-400',
+    rarity: 'epic',
+  },
+  {
     id: 'first_song',
     name: 'First Groove',
     emoji: '🎵',
@@ -194,6 +202,8 @@ interface GamificationState {
   earlyBirdSessions: number;
   queueMaxSize: number;
   moodSessionCounts: Record<string, number>;
+  /** Badge IDs queued for reveal animation, consumed one at a time */
+  pendingReveal: string[];
 }
 
 interface GamificationActions {
@@ -201,6 +211,10 @@ interface GamificationActions {
   likeSong: (videoId: string) => void;
   unlikeSong: (videoId: string) => void;
   checkAndAwardBadges: () => void;
+  /** Award a badge immediately and queue it for reveal animation */
+  awardBadge: (id: string) => void;
+  /** Called after the reveal modal is shown — removes the badge from the queue */
+  consumeReveal: () => void;
   reset: () => void;
 }
 
@@ -218,6 +232,7 @@ const DEFAULT_STATE: GamificationState = {
   earlyBirdSessions: 0,
   queueMaxSize: 0,
   moodSessionCounts: {},
+  pendingReveal: [],
 };
 
 export const useGamificationStore = create<GamificationStore>()(
@@ -323,6 +338,21 @@ export const useGamificationStore = create<GamificationStore>()(
           // XP milestone
           const xp = Math.floor((listenMinutes * 2) + (streakDays * 10) + (earnedBadges.length * 25));
           if (xp >= 1000) award('legendary');
+        });
+      },
+
+      awardBadge: (id) => {
+        set((state) => {
+          if (!state.earnedBadges.includes(id)) {
+            state.earnedBadges.push(id);
+            state.pendingReveal.push(id);
+          }
+        });
+      },
+
+      consumeReveal: () => {
+        set((state) => {
+          state.pendingReveal.shift();
         });
       },
 
