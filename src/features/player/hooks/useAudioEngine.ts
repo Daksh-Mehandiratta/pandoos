@@ -124,6 +124,7 @@ export function useAudioEngine() {
   // 3. React to Track Changes
   useEffect(() => {
     if (!playerRef.current || !currentTrack) return;
+    if (typeof playerRef.current.loadVideoById !== 'function') return;
     
     // loadVideoById automatically starts playback.
     // cueVideoById prepares it without playing (if we want paused state).
@@ -133,11 +134,12 @@ export function useAudioEngine() {
     } else {
       playerRef.current.cueVideoById(currentTrack.videoId);
     }
-  }, [currentTrack?.videoId]); // Only run when the ID changes
+  }, [currentTrack?.videoId, isPlaying]);
 
   // 4. React to Play/Pause (when toggled via UI without changing track)
   useEffect(() => {
     if (!playerRef.current || !currentTrack) return;
+    if (typeof playerRef.current.getPlayerState !== 'function') return;
     
     const state = playerRef.current.getPlayerState();
     if (isPlaying && state !== window.YT.PlayerState.PLAYING && state !== window.YT.PlayerState.BUFFERING) {
@@ -150,11 +152,13 @@ export function useAudioEngine() {
   // 5. React to Volume/Mute Changes
   useEffect(() => {
     if (!playerRef.current) return;
+    if (typeof playerRef.current.setVolume !== 'function') return;
+    
     playerRef.current.setVolume(volume * 100);
     if (isMuted) {
-      playerRef.current.mute();
+      if (typeof playerRef.current.mute === 'function') playerRef.current.mute();
     } else {
-      playerRef.current.unMute();
+      if (typeof playerRef.current.unMute === 'function') playerRef.current.unMute();
     }
   }, [volume, isMuted]);
 
@@ -163,6 +167,7 @@ export function useAudioEngine() {
   const lastSetProgress = useRef(progress);
   useEffect(() => {
     if (!playerRef.current || !currentTrack) return;
+    if (typeof playerRef.current.getDuration !== 'function') return;
     
     // If the difference is large, it was a manual UI seek, not the interval tracker
     if (Math.abs(progress - lastSetProgress.current) > 0.02) {
