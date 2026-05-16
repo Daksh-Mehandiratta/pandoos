@@ -32,6 +32,8 @@ interface PlayerState {
   history: Track[];
   /** True while YouTube player is loading/buffering */
   isLoading: boolean;
+  /** Timestamp when sleep timer will trigger, or null if inactive */
+  sleepTimerEnd: number | null;
 }
 
 interface PlayerActions {
@@ -66,6 +68,9 @@ interface PlayerActions {
   setDuration: (duration: number) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   setIsLoading: (isLoading: boolean) => void;
+  // ── Sleep Timer ──
+  setSleepTimer: (minutes: number) => void;
+  clearSleepTimer: () => void;
 }
 
 type PlayerStore = PlayerState & PlayerActions;
@@ -120,6 +125,7 @@ export const usePlayerStore = create<PlayerStore>()(
       duration: 0,
       history: [],
       isLoading: false,
+      sleepTimerEnd: null,
 
       // ── Actions ──
 
@@ -314,6 +320,16 @@ export const usePlayerStore = create<PlayerStore>()(
       },
       setIsLoading: (isLoading) => {
         set((state) => { state.isLoading = isLoading; });
+      },
+      setSleepTimer: (minutes) => {
+        set((state) => {
+          state.sleepTimerEnd = Date.now() + minutes * 60 * 1000;
+        });
+      },
+      clearSleepTimer: () => {
+        set((state) => {
+          state.sleepTimerEnd = null;
+        });
       },
     })),
     {

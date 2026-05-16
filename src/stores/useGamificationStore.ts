@@ -210,6 +210,7 @@ interface GamificationActions {
   recordListenSession: (durationSeconds: number, mood?: string, queueSize?: number) => void;
   likeSong: (videoId: string) => void;
   unlikeSong: (videoId: string) => void;
+  toggleLike: (videoId: string) => void;
   checkAndAwardBadges: () => void;
   /** Award a badge immediately and queue it for reveal animation */
   awardBadge: (id: string) => void;
@@ -294,6 +295,15 @@ export const useGamificationStore = create<GamificationStore>()(
         set((state) => {
           state.likedSongs = state.likedSongs.filter((id) => id !== videoId);
         });
+      },
+
+      toggleLike: (videoId) => {
+        const isLiked = get().likedSongs.includes(videoId);
+        if (isLiked) {
+          get().unlikeSong(videoId);
+        } else {
+          get().likeSong(videoId);
+        }
       },
 
       checkAndAwardBadges: () => {

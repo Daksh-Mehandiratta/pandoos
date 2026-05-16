@@ -8,12 +8,16 @@ import { VinylRecord } from './VinylRecord';
 import { Tonearm } from './Tonearm';
 import { SeekBar } from './SeekBar';
 import { PlayerControls } from './PlayerControls';
+import { PlayerOptionsModal } from './PlayerOptionsModal';
 
 export function FullscreenPlayer() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const isPlayerOpen = useUIStore((state) => state.isPlayerOpen);
   const closePlayer = useUIStore((state) => state.closePlayer);
+  const sleepTimerEnd = usePlayerStore((state) => state.sleepTimerEnd);
+
+  const [isOptionsOpen, setIsOptionsOpen] = React.useState(false);
 
   // Mount the color extractor hook here so it runs when a track is active
   useColorExtractor();
@@ -46,10 +50,14 @@ export function FullscreenPlayer() {
           >
             <ChevronDown size={32} />
           </button>
-          <span className="text-xs md:text-sm font-bold tracking-[0.2em] text-brand-primary uppercase drop-shadow-lg text-center px-4">
+          <span className="text-xs md:text-sm font-bold tracking-[0.2em] text-brand-primary uppercase drop-shadow-lg text-center px-4 flex flex-col items-center gap-1">
             Now Playing
+            {sleepTimerEnd && <span className="text-[10px] text-indigo-300 normal-case tracking-normal">Sleep Timer Active 💤</span>}
           </span>
-          <button className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white transition-all active:scale-95 touch-highlight">
+          <button 
+            onClick={() => setIsOptionsOpen(true)}
+            className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white transition-all active:scale-95 touch-highlight"
+          >
             <MoreVertical size={24} />
           </button>
         </div>
@@ -100,10 +108,12 @@ export function FullscreenPlayer() {
             <PlayerControls className="scale-105 md:scale-110" />
           </div>
         </div>
-        
       </div>
 
-
+      <PlayerOptionsModal 
+        isOpen={isOptionsOpen} 
+        onClose={() => setIsOptionsOpen(false)} 
+      />
     </BottomSheet>
   );
 }

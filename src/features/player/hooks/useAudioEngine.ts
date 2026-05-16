@@ -33,6 +33,11 @@ export function useAudioEngine() {
   const setIsPlaying = usePlayerStore((state) => state.setIsPlaying);
   const setIsLoading = usePlayerStore((state) => state.setIsLoading);
   const nextTrack = usePlayerStore((state) => state.nextTrack);
+  const pauseTrack = usePlayerStore((state) => state.pauseTrack);
+  
+  // Sleep Timer
+  const sleepTimerEnd = usePlayerStore((state) => state.sleepTimerEnd);
+  const clearSleepTimer = usePlayerStore((state) => state.clearSleepTimer);
 
   // Gamification
   const recordListenSession = useGamificationStore((state) => state.recordListenSession);
@@ -123,10 +128,18 @@ export function useAudioEngine() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2. Track Progress Tracker
+  // 2. Track Progress Tracker & Sleep Timer
   const startProgressTracker = () => {
     stopProgressTracker();
     progressIntervalRef.current = window.setInterval(() => {
+      // Check sleep timer first
+      const currentSleepTimer = usePlayerStore.getState().sleepTimerEnd;
+      if (currentSleepTimer && Date.now() >= currentSleepTimer) {
+        usePlayerStore.getState().pauseTrack();
+        usePlayerStore.getState().clearSleepTimer();
+        return;
+      }
+
       if (playerRef.current && typeof playerRef.current.getPlayerState === 'function' && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
         const currentTime = playerRef.current.getCurrentTime();
         const duration = playerRef.current.getDuration();
@@ -150,14 +163,9 @@ export function useAudioEngine() {
     if (typeof playerRef.current.loadVideoById !== 'function') return;
     
     // loadVideoById automatically starts playback.
-    // cueVideoById prepares it without playing (if we want paused state)
-    if (isPlaying) {
-      playerRef.current.loadVideoById(currentTrack.videoId);
-      setIsLoading(true);
-    } else {
-      playerRef.current.cueVideoById(currentTrack.videoId);
-    }
-  }, [currentTrack?.videoId, isPlaying]);
+    playerRef.current.loadVideoById(currentTrack.videoId);
+    setIsLoading(true);
+  }, [currentTrack?.videoId]);
 
   // 4. React to Play/Pause (when toggled via UI without changing track)
   useEffect(() => {
