@@ -1,35 +1,23 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Compass, Library, Heart, Activity } from 'lucide-react';
+import { Home, Compass, Library, Heart, Activity, LogIn } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export function Sidebar() {
+  const user = useAuthStore((state) => state.user);
+
   return (
     <aside className="w-64 h-full bg-[#0a0a0a] border-r border-white/5 flex flex-col pt-6 pb-24 z-30 shrink-0">
       {/* Brand */}
       <div className="px-6 mb-8 flex flex-col items-center">
-        <div className="w-16 h-16 rounded-full bg-[#111] border border-white/10 flex items-center justify-center mb-3 shadow-glow-sm">
-          <img src="/panda-icon.svg" alt="Pandoos" className="w-10 h-10" />
+        <div className="w-16 h-16 rounded-full bg-[#111] border border-white/10 flex items-center justify-center mb-3 shadow-glow-sm overflow-hidden p-1">
+          <img src="/panda_favicon.png" alt="Pandoos" className="w-full h-full object-cover rounded-full" />
         </div>
         <h1 className="text-2xl font-display font-bold text-white tracking-tight">Pandoos</h1>
       </div>
 
-      {/* Gamification Widget */}
-      <div className="px-4 mb-8">
-        <div className="bg-[#151515] rounded-xl p-3 border border-white/5 shadow-inner">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-2 py-0.5 rounded bg-white/10 text-white">Lv.1</span>
-              <span className="text-sm font-semibold text-white/90">Panda Cub</span>
-            </div>
-            <span className="text-[10px] text-white/50 font-mono">0 XP</span>
-          </div>
-          <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-brand-primary w-0 rounded-full" />
-          </div>
-          <p className="text-[10px] text-white/40 mt-1.5 text-center">100 XP to next level</p>
-        </div>
-      </div>
+
 
       {/* Navigation Sections */}
       <nav className="flex-1 overflow-y-auto scroll-container px-3 flex flex-col gap-6">
@@ -59,12 +47,24 @@ export function Sidebar() {
 
       </nav>
 
-      {/* Premium Badge */}
-      <div className="px-4 mt-auto">
-        <div className="bg-gradient-to-r from-brand-primary/10 to-transparent p-4 rounded-xl border border-brand-primary/20">
-          <h4 className="text-xs font-bold text-brand-primary uppercase tracking-wider mb-1">Premium Active</h4>
-          <p className="text-[10px] text-white/50">High-Fidelity Audio + Sync</p>
-        </div>
+      {/* Bottom Area: Login or Premium Badge */}
+      <div className="px-4 mt-auto flex flex-col gap-3">
+        {!user && (
+          <NavLink
+            to="/login"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-white text-black rounded-xl font-bold hover:scale-105 transition-transform"
+          >
+            <LogIn size={18} />
+            Log In
+          </NavLink>
+        )}
+        
+        {user && (
+          <div className="bg-gradient-to-r from-brand-primary/10 to-transparent p-4 rounded-xl border border-brand-primary/20">
+            <h4 className="text-xs font-bold text-brand-primary uppercase tracking-wider mb-1">Premium Active</h4>
+            <p className="text-[10px] text-white/50">High-Fidelity Audio + Sync</p>
+          </div>
+        )}
       </div>
     </aside>
   );

@@ -114,3 +114,4 @@ export function PandaMascot({ className, size = 120 }: PandaMascotProps) {
     </div>
   );
 }
+

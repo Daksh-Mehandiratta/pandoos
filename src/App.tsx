@@ -9,10 +9,16 @@ import { HomePage } from '@/pages/HomePage';
 import { SearchPage } from '@/pages/SearchPage';
 import { LibraryPage } from '@/pages/LibraryPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { LoginPage } from '@/pages/LoginPage';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { MobileLayout } from '@/components/layout/MobileLayout';
 
 export function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
   const isInitialized = useAuthStore((state) => state.isInitialized);
+  
+  // High priority for mobile: if screen is smaller than 768px, use MobileLayout
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Mount singleton hooks
   useAudioEngine();
@@ -34,7 +40,8 @@ export function App() {
 
   return (
     <Routes>
-      <Route element={<DesktopLayout />}>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={isMobile ? <MobileLayout /> : <DesktopLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/library" element={<LibraryPage />} />

@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import React from 'react';
 import { cn } from '@/utils/cn';
 import { getBestThumbnail } from '@/services/youtube';
 import type { Track } from '@/types/track';
@@ -8,47 +7,12 @@ interface VinylRecordProps {
   track: Track | null;
   isPlaying: boolean;
   className?: string;
-  size?: number;
 }
 
-export function VinylRecord({ track, isPlaying, className, size = 300 }: VinylRecordProps) {
-  const recordRef = useRef<HTMLDivElement>(null);
-  const spinTween = useRef<gsap.core.Tween | null>(null);
-
-  useEffect(() => {
-    if (!recordRef.current) return;
-
-    if (!spinTween.current) {
-      spinTween.current = gsap.to(recordRef.current, {
-        rotation: 360,
-        duration: 4, // 15 RPM
-        repeat: -1,
-        ease: 'none',
-        paused: true,
-      });
-    }
-
-    if (isPlaying) {
-      // Smooth spin up
-      gsap.to(spinTween.current, { timeScale: 1, duration: 1, ease: 'power2.in' });
-      spinTween.current.play();
-    } else {
-      // Smooth spin down
-      gsap.to(spinTween.current, { timeScale: 0, duration: 1.5, ease: 'power2.out' });
-    }
-
-    return () => {
-      if (spinTween.current) {
-        spinTween.current.kill();
-        spinTween.current = null;
-      }
-    };
-  }, [isPlaying]);
-
+export function VinylRecord({ track, isPlaying, className }: VinylRecordProps) {
   return (
     <div 
-      className={cn("relative flex items-center justify-center rounded-full shadow-vinyl will-animate z-10", className)}
-      style={{ width: size, height: size }}
+      className={cn("relative flex items-center justify-center rounded-full shadow-vinyl z-10 w-full aspect-square max-w-full", className)}
     >
       {/* Dynamic Specular Highlight (The light hitting the record) - Doesn't spin */}
       <div 
@@ -63,10 +27,11 @@ export function VinylRecord({ track, isPlaying, className, size = 300 }: VinylRe
 
       {/* The rotating record */}
       <div 
-        ref={recordRef}
         className="w-full h-full rounded-full bg-[#0a0a0a] relative flex items-center justify-center overflow-hidden"
         style={{
-          boxShadow: 'inset 0 0 10px rgba(0,0,0,1)'
+          boxShadow: 'inset 0 0 10px rgba(0,0,0,1)',
+          animation: 'spin 4s linear infinite',
+          animationPlayState: isPlaying ? 'running' : 'paused'
         }}
       >
         {/* Vinyl Grooves Texture */}
@@ -81,8 +46,8 @@ export function VinylRecord({ track, isPlaying, className, size = 300 }: VinylRe
         <div 
           className="relative rounded-full overflow-hidden z-10 flex items-center justify-center bg-[#151515] shadow-lg"
           style={{ 
-            width: size * 0.35, 
-            height: size * 0.35,
+            width: '35%', 
+            height: '35%',
             border: '2px solid rgba(255,255,255,0.05)',
             boxShadow: '0 0 15px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.8)'
           }}
@@ -102,9 +67,9 @@ export function VinylRecord({ track, isPlaying, className, size = 300 }: VinylRe
 
           {/* Center spindle hole wrapper to add depth */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center"
-               style={{ width: size * 0.05, height: size * 0.05, backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-            {/* The actual hole */}
-            <div className="w-3 h-3 bg-[#0a0a0f] rounded-full border border-black/50 shadow-inner" />
+               style={{ width: '14.28%', height: '14.28%', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+            {/* The actual hole (approx 30% of the wrapper) */}
+            <div className="w-[30%] h-[30%] bg-[#0a0a0f] rounded-full border border-black/50 shadow-inner" />
           </div>
         </div>
       </div>

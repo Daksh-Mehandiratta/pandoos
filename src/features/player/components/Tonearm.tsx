@@ -5,10 +5,9 @@ import { cn } from '@/utils/cn';
 interface TonearmProps {
   isPlaying: boolean;
   className?: string;
-  size?: number;
 }
 
-export function Tonearm({ isPlaying, className, size = 180 }: TonearmProps) {
+export function Tonearm({ isPlaying, className }: TonearmProps) {
   const armRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,8 +31,8 @@ export function Tonearm({ isPlaying, className, size = 180 }: TonearmProps) {
   return (
     <div 
       ref={armRef}
-      className={cn("absolute origin-[80%_15%] will-animate z-20 pointer-events-none drop-shadow-2xl", className)}
-      style={{ width: size * 0.4, height: size, filter: 'drop-shadow(10px 20px 15px rgba(0,0,0,0.6))' }}
+      className={cn("absolute origin-[80%_15%] will-animate z-20 pointer-events-none", className)}
+      style={{ width: '40%', height: '100%', filter: 'drop-shadow(10px 20px 15px rgba(0,0,0,0.6))' }}
     >
       <svg 
         viewBox="0 0 100 300" 

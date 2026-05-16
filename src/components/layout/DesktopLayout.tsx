@@ -4,7 +4,7 @@ import { Sidebar } from './Sidebar';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 
 // We will build DesktopPlayer and DesktopFullscreenPlayer next
-import { DesktopPlayer } from '@/features/player/components/DesktopPlayer';
+import { MiniPlayer } from '@/features/player/components/MiniPlayer';
 import { FullscreenPlayer } from '@/features/player/components/FullscreenPlayer';
 
 export function DesktopLayout() {
@@ -26,7 +26,11 @@ export function DesktopLayout() {
 
       {/* Persistent Bottom Player */}
       {currentTrack && (
-        <DesktopPlayer />
+        <div className="fixed bottom-6 left-64 right-6 z-40 flex justify-center pointer-events-none">
+          <div className="w-full max-w-3xl pointer-events-auto">
+            <MiniPlayer />
+          </div>
+        </div>
       )}
 
       {/* The Fullscreen Player overlays everything when active */}
