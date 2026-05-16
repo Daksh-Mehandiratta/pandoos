@@ -56,33 +56,46 @@ export function SeekBar({ className }: { className?: string }) {
       {/* The Bar */}
       <div 
         ref={containerRef}
-        className="seek-bar h-6 flex items-center group touch-none"
+        className="seek-bar h-8 flex items-center group touch-none relative"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Track background */}
-        <div className="w-full h-1.5 bg-white/10 rounded-full relative overflow-hidden">
-          {/* Fill progress */}
+        {/* Track background (Bamboo Stick Base) */}
+        <div className="w-full h-2.5 bg-green-950/40 rounded-full relative overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] border border-green-900/30">
+          
+          {/* Bamboo segments (notches) */}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div 
+              key={`notch-${i}`} 
+              className="absolute top-0 bottom-0 w-[2px] bg-green-900/40"
+              style={{ left: `${(i + 1) * 12.5}%` }}
+            />
+          ))}
+
+          {/* Fill progress (Glowing Emerald) */}
           <div 
-            className="seek-bar-fill h-full bg-brand-primary"
+            className="seek-bar-fill h-full bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-400"
             style={{ 
               width: `${displayProgress * 100}%`,
-              transition: isDragging ? 'none' : 'width 0.1s linear'
+              transition: isDragging ? 'none' : 'width 0.1s linear',
+              boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)'
             }}
           />
         </div>
         
-        {/* Playhead thumb (visible on drag or hover) */}
+        {/* Playhead thumb (Panda or Leaf) */}
         <div 
           className={cn(
-            "absolute w-3.5 h-3.5 bg-white rounded-full shadow-lg border border-white/20 top-1/2 -translate-y-1/2 -ml-1.5",
-            "transition-transform scale-0 group-hover:scale-100 focus:scale-100",
+            "absolute top-1/2 -translate-y-1/2 -ml-3 flex items-center justify-center text-xl transition-transform drop-shadow-[0_2px_8px_rgba(16,185,129,0.5)]",
+            "scale-100 md:scale-0 group-hover:scale-100 focus:scale-100",
             isDragging ? "scale-125" : ""
           )}
           style={{ left: `${displayProgress * 100}%` }}
-        />
+        >
+          🐼
+        </div>
       </div>
     </div>
   );

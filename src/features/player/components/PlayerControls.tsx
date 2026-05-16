@@ -25,17 +25,17 @@ export function PlayerControls({ className }: { className?: string }) {
         onClick={toggleShuffle}
         className={cn(
           "p-2 touch-highlight transition-colors",
-          isShuffling ? "text-brand-primary" : "text-text-muted hover:text-white"
+          isShuffling ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "text-white/50 hover:text-white"
         )}
       >
         <Shuffle size={20} strokeWidth={2.5} />
-        {isShuffling && <div className="w-1 h-1 bg-brand-primary rounded-full mx-auto mt-1" />}
+        {isShuffling && <div className="w-1 h-1 bg-emerald-400 rounded-full mx-auto mt-1" />}
       </button>
 
       {/* Prev Button */}
       <button 
         onClick={prevTrack}
-        className="p-2 text-white hover:text-brand-primary touch-highlight transition-colors"
+        className="p-2 text-white/80 hover:text-emerald-400 hover:drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] touch-highlight transition-all active:scale-90"
       >
         <SkipBack size={28} strokeWidth={2.5} fill="currentColor" />
       </button>
@@ -45,12 +45,12 @@ export function PlayerControls({ className }: { className?: string }) {
         onClick={togglePlayPause}
         disabled={isLoading}
         className={cn(
-          "w-16 h-16 rounded-full flex items-center justify-center bg-white text-surface-base shadow-glow-sm touch-highlight transition-transform",
+          "w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-400 to-green-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] touch-highlight transition-transform active:scale-90 border-2 border-emerald-300/20",
           isLoading && "opacity-80 scale-95"
         )}
       >
         {isLoading ? (
-          <div className="w-6 h-6 border-3 border-surface-base border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
         ) : isPlaying ? (
           <Pause size={28} strokeWidth={3} fill="currentColor" />
         ) : (
@@ -63,8 +63,8 @@ export function PlayerControls({ className }: { className?: string }) {
         onClick={nextTrack}
         disabled={!hasNext && !isLooping}
         className={cn(
-          "p-2 text-white touch-highlight transition-colors",
-          (!hasNext && !isLooping) ? "opacity-30" : "hover:text-brand-primary"
+          "p-2 text-white/80 touch-highlight transition-all active:scale-90",
+          (!hasNext && !isLooping) ? "opacity-30" : "hover:text-emerald-400 hover:drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]"
         )}
       >
         <SkipForward size={28} strokeWidth={2.5} fill="currentColor" />
@@ -75,11 +75,11 @@ export function PlayerControls({ className }: { className?: string }) {
         onClick={toggleLoop}
         className={cn(
           "p-2 touch-highlight transition-colors",
-          isLooping ? "text-brand-primary" : "text-text-muted hover:text-white"
+          isLooping ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "text-white/50 hover:text-white"
         )}
       >
         <Repeat size={20} strokeWidth={2.5} />
-        {isLooping && <div className="w-1 h-1 bg-brand-primary rounded-full mx-auto mt-1" />}
+        {isLooping && <div className="w-1 h-1 bg-emerald-400 rounded-full mx-auto mt-1" />}
       </button>
     </div>
   );
