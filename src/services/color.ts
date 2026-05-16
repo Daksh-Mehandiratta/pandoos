@@ -58,34 +58,41 @@ async function sampleImageColors(
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve([]); return; }
 
-      // Crop top and bottom 15% to avoid YouTube's black bars on hqdefault
-      const sy = img.height * 0.15;
-      const sHeight = img.height * 0.7;
+      // Crop to center 50% to avoid any black bars on top, bottom, or sides
+      const sx = img.width * 0.25;
+      const sy = img.height * 0.25;
+      const sWidth = img.width * 0.5;
+      const sHeight = img.height * 0.5;
       
-      ctx.drawImage(img, 0, sy, img.width, sHeight, 0, 0, SIZE, SIZE);
-      const { data } = ctx.getImageData(0, 0, SIZE, SIZE);
+      try {
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, SIZE, SIZE);
+        const { data } = ctx.getImageData(0, 0, SIZE, SIZE);
 
-      const pixels: Array<[number, number, number]> = [];
-      const step = Math.max(1, Math.floor(data.length / 4 / sampleSize));
+        const pixels: Array<[number, number, number]> = [];
+        const step = Math.max(1, Math.floor(data.length / 4 / sampleSize));
 
-      for (let i = 0; i < data.length; i += 4 * step) {
-        const r = data[i] ?? 0;
-        const g = data[i + 1] ?? 0;
-        const b = data[i + 2] ?? 0;
-        const a = data[i + 3] ?? 0;
-        // Skip transparent and low-saturation/dark pixels (black bars with JPEG noise)
-        if (a < 128) continue;
-        const brightness = (r + g + b) / 3;
-        if (brightness < 40 || brightness > 230) continue; // Skip darks and pure whites
-        
-        // Skip grey pixels (low saturation)
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        if (max - min < 20) continue; 
-        
-        pixels.push([r, g, b]);
+        for (let i = 0; i < data.length; i += 4 * step) {
+          const r = data[i] ?? 0;
+          const g = data[i + 1] ?? 0;
+          const b = data[i + 2] ?? 0;
+          const a = data[i + 3] ?? 0;
+          
+          if (a < 128) continue;
+          
+          const brightness = (r + g + b) / 3;
+          if (brightness < 50 || brightness > 230) continue; // Reject dark pixels entirely
+          
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          if (max - min < 35) continue; // Reject grey/unsaturated pixels
+          
+          pixels.push([r, g, b]);
+        }
+        resolve(pixels);
+      } catch (e) {
+        console.error("Canvas tainted or failed:", e);
+        resolve([]);
       }
-      resolve(pixels);
     };
 
     img.onerror = () => resolve([]);
