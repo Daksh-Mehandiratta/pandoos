@@ -1,97 +1,138 @@
-import Vibrant from 'node-vibrant';
-import type { Palette } from 'node-vibrant/lib/color';
-
 interface ExtractedColors {
-  primary: string;    // HSL without hsl() wrapper
+  primary: string;    // HSL without hsl() wrapper, e.g. "270 80% 68%"
   secondary: string;
   accent: string;
   muted: string;
 }
 
-/**
- * Convert a Vibrant Swatch RGB to an HSL CSS variable value.
- * Returns a string like "270 80% 68%" — ready for CSS var injection.
- */
+/** Convert RGB (0-255) to an HSL string "H S% L%" for CSS var injection */
 function rgbToHslString(r: number, g: number, b: number): string {
-  const rNorm = r / 255;
-  const gNorm = g / 255;
-  const bNorm = b / 255;
-
-  const max = Math.max(rNorm, gNorm, bNorm);
-  const min = Math.min(rNorm, gNorm, bNorm);
+  const rN = r / 255, gN = g / 255, bN = b / 255;
+  const max = Math.max(rN, gN, bN);
+  const min = Math.min(rN, gN, bN);
   const delta = max - min;
 
-  let h = 0;
-  let s = 0;
+  let h = 0, s = 0;
   const l = (max + min) / 2;
 
   if (delta !== 0) {
     s = delta / (1 - Math.abs(2 * l - 1));
-    if (max === rNorm) h = ((gNorm - bNorm) / delta) % 6;
-    else if (max === gNorm) h = (bNorm - rNorm) / delta + 2;
-    else h = (rNorm - gNorm) / delta + 4;
+    if (max === rN) h = ((gN - bN) / delta) % 6;
+    else if (max === gN) h = (bN - rN) / delta + 2;
+    else h = (rN - gN) / delta + 4;
     h = Math.round(h * 60);
     if (h < 0) h += 360;
   }
 
-  // Boost saturation for dark images to keep the theme vivid
-  const boostedS = Math.min(Math.round(s * 100) + 15, 95);
-  // Keep lightness in a usable range (not too dark, not washed out)
-  const clampedL = Math.max(50, Math.min(75, Math.round(l * 100)));
-
-  return `${h} ${boostedS}% ${clampedL}%`;
-}
-
-function paletteToHsl(swatch: Palette[keyof Palette]): string | null {
-  if (!swatch) return null;
-  const [r, g, b] = swatch.getRgb();
-  return rgbToHslString(r, g, b);
+  // Boost saturation so album-art dark images still produce vivid theme colors
+  const S = Math.min(Math.round(s * 100) + 15, 95);
+  // Keep lightness in a usable range — not too dark, not washed out
+  const L = Math.max(50, Math.min(75, Math.round(l * 100)));
+  return `${h} ${S}% ${L}%`;
 }
 
 /**
- * Extract dominant, vibrant, and muted colors from an image URL.
- * Uses node-vibrant (browser build) — runs in the main thread but is fast enough
- * for album art thumbnails (typically < 100ms on mid-range devices).
+ * Load an image into an offscreen canvas, sample pixels in a grid,
+ * and return up to `k` dominant color clusters (k-means lite).
  *
- * @param imageUrl - Any cross-origin URL. YouTube thumbnails are CORS-enabled.
- * @returns Extracted color palette or null on failure.
+ * This replaces node-vibrant which doesn't have a default export in Vite's
+ * browser bundler and crashes the entire module graph with a SyntaxError.
+ */
+async function sampleImageColors(
+  imageUrl: string,
+  sampleSize = 200
+): Promise<Array<[number, number, number]>> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const SIZE = 64; // downscale for speed
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve([]); return; }
+
+      ctx.drawImage(img, 0, 0, SIZE, SIZE);
+      const { data } = ctx.getImageData(0, 0, SIZE, SIZE);
+
+      const pixels: Array<[number, number, number]> = [];
+      const step = Math.max(1, Math.floor(data.length / 4 / sampleSize));
+
+      for (let i = 0; i < data.length; i += 4 * step) {
+        const r = data[i] ?? 0;
+        const g = data[i + 1] ?? 0;
+        const b = data[i + 2] ?? 0;
+        const a = data[i + 3] ?? 0;
+        // Skip near-transparent, near-black, and near-white pixels
+        if (a < 128) continue;
+        const brightness = (r + g + b) / 3;
+        if (brightness < 20 || brightness > 240) continue;
+        pixels.push([r, g, b]);
+      }
+      resolve(pixels);
+    };
+
+    img.onerror = () => resolve([]);
+    img.src = imageUrl;
+  });
+}
+
+/** Find the most-saturated pixel cluster among sampled pixels */
+function dominantColors(
+  pixels: Array<[number, number, number]>
+): { vibrant: [number,number,number] | null; muted: [number,number,number] | null } {
+  if (pixels.length === 0) return { vibrant: null, muted: null };
+
+  // Sort by saturation descending
+  const withSat = pixels.map(([r, g, b]) => {
+    const rN = r / 255, gN = g / 255, bN = b / 255;
+    const max = Math.max(rN, gN, bN);
+    const min = Math.min(rN, gN, bN);
+    const sat = max === 0 ? 0 : (max - min) / max;
+    return { r, g, b, sat };
+  });
+  withSat.sort((a, b) => b.sat - a.sat);
+
+  const vibrant = withSat[0];
+  const muted = withSat[Math.floor(withSat.length * 0.7)];
+
+  return {
+    vibrant: vibrant ? [vibrant.r, vibrant.g, vibrant.b] : null,
+    muted: muted ? [muted.r, muted.g, muted.b] : null,
+  };
+}
+
+/**
+ * Extract dominant, vibrant, and muted colors from an image URL using
+ * the browser Canvas API — no external dependencies required.
+ *
+ * @param imageUrl - Any CORS-enabled URL (YouTube thumbnails work fine).
+ * @returns Extracted palette or null on failure.
  */
 export async function extractColors(imageUrl: string): Promise<ExtractedColors | null> {
   try {
-    const palette = await Vibrant.from(imageUrl)
-      .quality(5)   // quality 1=best, 10=fastest; 5 is a good balance
-      .getPalette();
+    const pixels = await sampleImageColors(imageUrl);
+    if (pixels.length < 5) return null;
 
-    // Vibrant = most colorful (primary accent)
-    // LightVibrant = lighter variant (secondary)
-    // Muted = desaturated version (background tints)
-    // DarkVibrant = dark accent for contrast elements
-    const primary = paletteToHsl(palette.Vibrant)
-      ?? paletteToHsl(palette.DarkVibrant)
-      ?? null;
+    const { vibrant, muted } = dominantColors(pixels);
+    if (!vibrant) return null;
 
-    const secondary = paletteToHsl(palette.LightVibrant)
-      ?? paletteToHsl(palette.LightMuted)
-      ?? null;
+    const primary = rgbToHslString(...vibrant);
 
-    const accent = paletteToHsl(palette.DarkVibrant)
-      ?? paletteToHsl(palette.Muted)
-      ?? null;
+    // Derive secondary as a lighter/shifted variant
+    const [ph] = primary.split(' ');
+    const hue = parseInt(ph ?? '270', 10);
+    const secondary = `${(hue + 30) % 360} 70% 65%`;
+    const accent    = `${(hue + 180) % 360} 75% 60%`;
+    const mutedStr  = muted
+      ? rgbToHslString(...muted)
+      : `${hue} 25% 55%`;
 
-    const muted = paletteToHsl(palette.Muted)
-      ?? paletteToHsl(palette.DarkMuted)
-      ?? null;
-
-    if (!primary) return null;
-
-    return {
-      primary,
-      secondary: secondary ?? primary,
-      accent: accent ?? primary,
-      muted: muted ?? `${primary.split(' ')[0]} 25% 55%`,
-    };
+    return { primary, secondary, accent, muted: mutedStr };
   } catch {
-    // Silently fail — caller falls back to default theme
+    // Silently fail — caller uses DEFAULT_THEME as fallback
     return null;
   }
 }

@@ -13,10 +13,6 @@ interface LRCLIBResponse {
   syncedLyrics?: string;
 }
 
-/**
- * Parse LRC format lyrics into timed lines.
- * LRC format: [mm:ss.xx] lyric line
- */
 function parseLRC(lrc: string): LyricsLine[] {
   const lines: LyricsLine[] = [];
   const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/g;
@@ -28,26 +24,27 @@ function parseLRC(lrc: string): LyricsLine[] {
     const ms = parseInt((match[3] ?? '0').padEnd(3, '0'), 10);
     const text = (match[4] ?? '').trim();
     if (text) {
-      lines.push({ time: (mins * 60 + secs) * 1000 + ms, text });
+        lines.push({ time: (mins * 60 + secs) * 1000 + ms, text });
     }
   }
 
   return lines.sort((a, b) => a.time - b.time);
 }
 
-/**
- * Fetch lyrics from LRCLIB (free, no API key, synced LRC format supported).
- * Falls back to plain lyrics if synced are unavailable.
- * Server-proxied via /api/lyrics to avoid CORS issues in Capacitor WebView.
- */
 export async function fetchLyrics(
   title: string,
   artist: string
 ): Promise<LyricsResult> {
   try {
-    const res = await fetch(
-      `/api/lyrics?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`
-    );
+    // In dev, bypass proxy so `npm run dev` works natively.
+    // In prod, Capacitor might block cross-origin, so use the proxy.
+    const url = import.meta.env.DEV
+      ? `https://lrclib.net/api/get?track_name=${encodeURIComponent(title)}&artist_name=${encodeURIComponent(artist)}`
+      : `/api/lyrics?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`;
+
+    const res = await fetch(url, {
+      headers: import.meta.env.DEV ? { 'User-Agent': 'PandoosMusic/1.0' } : undefined
+    });
 
     if (!res.ok) return { plain: '', synced: null };
 

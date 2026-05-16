@@ -1,0 +1,274 @@
+# 🐼 Pandoos Music — Clean Rebuild Implementation Plan
+
+> **For any agent picking this up mid-way:** Read "Project Snapshot" + "Architecture Decisions" first, then find the first unchecked `[ ]` step and continue from there.
+
+---
+
+## Project Snapshot
+
+**Workspace:** `c:\Users\rajva\OneDrive\Desktop\pandoos` (EMPTY — fresh scaffold)
+**Goal:** Visually stunning, mobile-first Panda-themed music streaming PWA, Capacitor-ready for iOS/Android.
+**Prior issue:** Previous repo at `Pandoos-music/Pandoos-Music` was overengineered (NestJS + Prisma backend nobody needed). This is a clean, correct-stack rebuild.
+
+---
+
+## Architecture Decisions (Read Before Touching Code)
+
+### Music Source: YouTube IFrame API (NOT Data API)
+- **Data API** (search.list): 10,000 quota units/day, 100 units per search = only ~100 searches/day free. **AVOID for playback.**
+- **IFrame API**: Zero quota. Unlimited playback. **Use for audio.**
+- **Strategy:** YouTube Data API for search ONLY (server-side proxied + cached). YouTube IFrame for actual playback.
+
+### No Backend Server
+- **No NestJS. No Express. No Prisma.**
+- All "backend" logic lives in **Vercel Edge Functions** (`/api/*.ts`) co-located in the same repo.
+- Database + Auth: **Supabase** (PostgreSQL, Row Level Security, built-in JWT auth).
+- Caching: **Upstash Redis** (free tier) for cross-user YouTube search cache (24hr TTL).
+
+### State: Zustand Only
+- No React Context for global state (audio, queue, user, theme).
+- Context ONLY for local component trees if strictly necessary (e.g., DragContext for queue reordering).
+
+### Data Fetching: TanStack Query
+- Wraps all service calls. Aggressive stale-while-revalidate.
+- Prevents redundant YouTube API hits at the client layer.
+
+---
+
+## Tech Stack (Locked)
+
+| Layer | Choice | Reason |
+|---|---|---|
+| Framework | React 18 + Vite | Fast HMR, Capacitor-compatible |
+| Language | 100% TypeScript (.ts/.tsx) | Type safety, no .js/.jsx |
+| Styling | Tailwind CSS v3 + CSS Variables | Dynamic theming via CSS vars |
+| Animations | Framer Motion + GSAP | Page transitions + vinyl/panda micro-animations |
+| State | Zustand | No context boilerplate, devtools, immutable updates |
+| Server State | TanStack Query v5 | Caching, background refetch, deduplication |
+| Auth/DB | Supabase | Postgres, RLS, JWT, realtime |
+| API Cache | Upstash Redis | Cross-user YouTube search result cache |
+| Audio | Howler.js | Background play, mobile compatibility, Capacitor-safe |
+| PWA | vite-plugin-pwa | Service worker, manifest, offline shell |
+| Router | React Router v6 | Nested routes, lazy loading |
+| Forms | React Hook Form + Zod | Type-safe validation |
+| Color Extraction | node-vibrant (browser build) | Album art → theme colors |
+
+---
+
+## Directory Structure (Target)
+
+```
+pandoos/
+├── api/                          # Vercel Edge Functions (server-side proxy)
+│   ├── search.ts                 # YouTube Data API search proxy + Redis cache
+│   ├── trending.ts               # YouTube trending music proxy + Redis cache
+│   └── lyrics.ts                 # Lyrics.ovh / LRCLIB proxy
+├── public/
+│   ├── icons/                    # PWA icons (512x512, 192x192, maskable)
+│   ├── panda/                    # Panda SVG assets
+│   └── manifest.webmanifest
+├── src/
+│   ├── main.tsx                  # Entry point
+│   ├── App.tsx                   # Root: QueryClient + Router + Zustand hydration
+│   ├── index.css                 # Tailwind directives + CSS variable tokens
+│   │
+│   ├── features/                 # Feature-based modules (each self-contained)
+│   │   ├── player/
+│   │   │   ├── components/
+│   │   │   │   ├── MiniPlayer.tsx
+│   │   │   │   ├── FullscreenPlayer.tsx
+│   │   │   │   ├── VinylRecord.tsx       # GSAP spinning vinyl
+│   │   │   │   ├── Tonearm.tsx           # Mechanical tonearm animation
+│   │   │   │   ├── SeekBar.tsx           # Draggable seek bar
+│   │   │   │   ├── PlayerControls.tsx
+│   │   │   │   ├── LyricsPanel.tsx
+│   │   │   │   └── QueueSheet.tsx        # Bottom sheet queue
+│   │   │   ├── hooks/
+│   │   │   │   ├── useAudioEngine.ts     # Howler.js abstraction
+│   │   │   │   └── useColorExtractor.ts  # node-vibrant → CSS vars
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── search/
+│   │   │   ├── components/
+│   │   │   │   ├── SearchBar.tsx
+│   │   │   │   ├── SearchResults.tsx
+│   │   │   │   └── TrackCard.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useSearch.ts          # TanStack Query wrapper
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── home/
+│   │   │   ├── components/
+│   │   │   │   ├── HeroSection.tsx
+│   │   │   │   ├── TrendingCarousel.tsx
+│   │   │   │   ├── MoodGrid.tsx
+│   │   │   │   └── RecentlyPlayed.tsx
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── library/
+│   │   │   ├── components/
+│   │   │   │   ├── PlaylistGrid.tsx
+│   │   │   │   ├── PlaylistCard.tsx
+│   │   │   │   └── LikedSongs.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useLibrary.ts         # Supabase queries via TanStack Query
+│   │   │   └── index.ts
+│   │   │
+│   │   ├── auth/
+│   │   │   ├── components/
+│   │   │   │   ├── LoginSheet.tsx        # Bottom sheet auth modal
+│   │   │   │   └── AvatarMenu.tsx
+│   │   │   └── index.ts
+│   │   │
+│   │   └── panda/
+│   │       ├── PandaMascot.tsx           # Animated SVG panda companion
+│   │       └── usePandaState.ts          # Panda reaction to audio state
+│   │
+│   ├── services/                 # Pure API call functions (no React hooks)
+│   │   ├── youtube.ts            # Calls /api/search, /api/trending
+│   │   ├── supabase.ts           # Supabase client singleton
+│   │   ├── library.ts            # Supabase playlist/likes CRUD
+│   │   ├── lyrics.ts             # Calls /api/lyrics
+│   │   └── color.ts              # node-vibrant color extraction
+│   │
+│   ├── stores/                   # Zustand stores (global state ONLY)
+│   │   ├── usePlayerStore.ts     # Track, queue, play/pause, volume, loop, shuffle
+│   │   ├── useThemeStore.ts      # Dynamic colors extracted from album art
+│   │   └── useAuthStore.ts       # Supabase user session
+│   │
+│   ├── hooks/                    # App-wide custom hooks
+│   │   ├── useDebounce.ts
+│   │   ├── useSwipeGesture.ts    # Capacitor-ready touch gestures
+│   │   └── useMediaSession.ts    # Web Media Session API (lock screen controls)
+│   │
+│   ├── components/               # Truly shared, dumb UI components
+│   │   ├── layout/
+│   │   │   ├── MobileLayout.tsx  # App shell: TopBar + BottomNav + MiniPlayer
+│   │   │   ├── TopBar.tsx
+│   │   │   └── BottomNav.tsx
+│   │   ├── ui/
+│   │   │   ├── BottomSheet.tsx   # Reusable swipe-to-close bottom sheet
+│   │   │   ├── GlassCard.tsx
+│   │   │   ├── Spinner.tsx
+│   │   │   ├── Avatar.tsx
+│   │   │   └── IconButton.tsx
+│   │   └── animations/
+│   │       └── PageTransition.tsx
+│   │
+│   ├── pages/                    # Route-level page components (lazy loaded)
+│   │   ├── HomePage.tsx
+│   │   ├── SearchPage.tsx
+│   │   ├── LibraryPage.tsx
+│   │   └── PlaylistPage.tsx
+│   │
+│   ├── types/                    # Shared TypeScript interfaces
+│   │   ├── track.ts
+│   │   ├── playlist.ts
+│   │   └── user.ts
+│   │
+│   └── utils/
+│       ├── formatTime.ts
+│       ├── cn.ts                 # clsx + tailwind-merge utility
+│       └── constants.ts
+│
+├── .env.local                    # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, etc.
+├── .env.example
+├── capacitor.config.ts           # Capacitor config (pre-configured)
+├── vite.config.ts
+├── tailwind.config.ts
+├── tsconfig.json
+├── tsconfig.node.json
+└── package.json
+```
+
+---
+
+## Open Questions for User
+
+> [!IMPORTANT]
+> **Please answer these before I start scaffolding:**
+
+1. **YouTube API Key:** Do you have an existing YouTube Data API v3 key? (You'll need one for the search proxy — but playback is free via IFrame)
+2. **Supabase Project:** Do you want to reuse the old Supabase project (`rqrxgnonzmbqjmlrpbqe.supabase.co`) or create a new one?
+3. **Upstash Redis:** Do you have an Upstash account, or should I include instructions to create one?
+4. **Guest Mode:** Can users browse/play music without logging in, or is login required first?
+5. **Deployment:** Will you deploy to Vercel (required for the `/api` edge functions), or another host?
+
+> [!WARNING]
+> If you don't have a YouTube Data API key yet, the search feature will not work. Playback via IFrame API requires no key.
+
+---
+
+## Implementation Phases
+
+### Phase 1 — Foundation (Step 1-4)
+- [ ] **Step 1:** Scaffold Vite + React 18 + TypeScript project
+- [ ] **Step 2:** Install all dependencies (Tailwind, Framer Motion, GSAP, Zustand, TanStack Query, Howler, Supabase, etc.)
+- [ ] **Step 3:** Configure Tailwind + CSS Variables design system (colors, fonts, spacing tokens)
+- [ ] **Step 4:** Set up `tsconfig.json`, `vite.config.ts`, PWA plugin, path aliases
+
+### Phase 2 — Core Layout & Routing (Step 5-7)
+- [ ] **Step 5:** `MobileLayout.tsx` — App shell (TopBar, BottomNav, MiniPlayer slot)
+- [ ] **Step 6:** `App.tsx` — QueryClient + Router + lazy-loaded pages
+- [ ] **Step 7:** `BottomSheet.tsx` — Reusable swipe-to-close bottom sheet (Framer Motion)
+
+### Phase 3 — Global State (Step 8-10)
+- [ ] **Step 8:** `usePlayerStore.ts` — Full Zustand player store (track, queue, play/pause, volume, loop, shuffle, history)
+- [ ] **Step 9:** `useThemeStore.ts` — Dynamic color store (dominant, vibrant, muted colors from album art)
+- [ ] **Step 10:** `useAuthStore.ts` — Supabase session store
+
+### Phase 4 — Audio Engine (Step 11-12)
+- [ ] **Step 11:** `useAudioEngine.ts` — Howler.js hook (play, pause, seek, volume, events, background play)
+- [ ] **Step 12:** `useMediaSession.ts` — Web Media Session API for lock screen / notification controls
+
+### Phase 5 — YouTube Integration (Step 13-15)
+- [ ] **Step 13:** `api/search.ts` — Vercel Edge Function: YouTube Data API proxy + Upstash Redis cache
+- [ ] **Step 14:** `api/trending.ts` — Vercel Edge Function: trending music proxy + cache
+- [ ] **Step 15:** `services/youtube.ts` + `useSearch.ts` — TanStack Query hooks
+
+### Phase 6 — The Premium Player (Step 16-20) ⭐ CRITICAL
+- [ ] **Step 16:** `VinylRecord.tsx` — Photorealistic vinyl with GSAP spin, album art center label
+- [ ] **Step 17:** `Tonearm.tsx` — Mechanical tonearm with SVG + GSAP rotation on play/pause
+- [ ] **Step 18:** `MiniPlayer.tsx` — Sticky bottom mini player with Framer Motion expand animation
+- [ ] **Step 19:** `FullscreenPlayer.tsx` — Full player sheet with vinyl, controls, seek bar
+- [ ] **Step 20:** `useColorExtractor.ts` — node-vibrant → CSS variable injection → theme transition
+
+### Phase 7 — Panda Mascot (Step 21-22) ⭐ DIFFERENTIATOR
+- [ ] **Step 21:** `PandaMascot.tsx` — SVG panda with Framer Motion reactions (nod, blink, sleep, shades)
+- [ ] **Step 22:** `usePandaState.ts` — Maps audio state (BPM, energy, pause) to panda animations
+
+### Phase 8 — Pages (Step 23-27)
+- [ ] **Step 23:** `HomePage.tsx` — Hero, trending carousel, mood grid, recently played
+- [ ] **Step 24:** `SearchPage.tsx` — Search bar + results
+- [ ] **Step 25:** `LibraryPage.tsx` — Playlists + liked songs (Supabase)
+- [ ] **Step 26:** `PlaylistPage.tsx` — Individual playlist view
+- [ ] **Step 27:** `LyricsPanel.tsx` — Lyrics via `/api/lyrics` proxy
+
+### Phase 9 — Auth (Step 28-29)
+- [ ] **Step 28:** Supabase auth setup (magic link + Google OAuth)
+- [ ] **Step 29:** `LoginSheet.tsx` — Bottom sheet sign in UI
+
+### Phase 10 — PWA + Capacitor (Step 30-31)
+- [ ] **Step 30:** PWA manifest, service worker, offline shell
+- [ ] **Step 31:** `capacitor.config.ts` — Pre-configured for iOS/Android wrapping
+
+---
+
+## Verification Checkpoints
+
+After each phase, the app should be runnable with `npm run dev` and the completed features should be visually testable in the browser. No phase should break previous phases.
+
+---
+
+## Environment Variables Required
+
+```env
+# .env.local (never commit this)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# These are server-only (Vercel Edge Functions, not exposed to browser)
+YOUTUBE_API_KEY=your-youtube-data-api-v3-key
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-upstash-token
+```

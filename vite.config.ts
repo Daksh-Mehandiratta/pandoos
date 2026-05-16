@@ -57,15 +57,7 @@ export default defineConfig({
     target: 'es2020', // Capacitor WebView supports ES2020
     rollupOptions: {
       output: {
-        // Manual chunks prevent the main bundle from growing too large.
-        // GSAP and Framer Motion are large and rarely change — split them out.
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'animation-vendor': ['framer-motion', 'gsap'],
-          'query-vendor': ['@tanstack/react-query'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'audio-vendor': ['howler'],
-        },
+        // Rollup output options
       },
     },
   },
