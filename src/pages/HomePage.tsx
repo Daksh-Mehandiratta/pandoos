@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play } from 'lucide-react';
 import { PandaMascot } from '@/features/panda/components/PandaMascot';
 import { useSearch } from '@/features/search/hooks/useSearch';
 import { usePlayerStore } from '@/stores/usePlayerStore';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useGamificationStore } from '@/stores/useGamificationStore';
 import { getBestThumbnail } from '@/services/youtube';
 
 const MOODS = [
@@ -24,7 +24,7 @@ export function HomePage() {
   const [customQuery, setCustomQuery] = useState(MOODS[0].query);
   const { data: moodTracks, isLoading } = useSearch(customQuery);
   const playTrack = usePlayerStore((state) => state.playTrack);
-  const user = useAuthStore((state) => state.user);
+  const recordListenSession = useGamificationStore((s) => s.recordListenSession);
 
   // Panda conversational logic
   const [pandaMessage, setPandaMessage] = useState("");
@@ -183,7 +183,7 @@ export function HomePage() {
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
                   className="min-w-[280px] w-[280px] h-[360px] shrink-0 snap-center relative group cursor-pointer"
-                  onClick={() => playTrack(track, moodTracks)}
+                  onClick={() => { playTrack(track, moodTracks); recordListenSession(0, selectedMood.id, moodTracks?.length); }}
                 >
                   {/* Glassmorphic Vibe Card */}
                   <div className="absolute inset-0 rounded-3xl overflow-hidden glass-mood border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]">

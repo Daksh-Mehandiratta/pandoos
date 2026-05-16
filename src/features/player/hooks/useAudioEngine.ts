@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
+import { useGamificationStore } from '@/stores/useGamificationStore';
 import { PROGRESS_INTERVAL_MS } from '@/utils/constants';
 
 /**
@@ -17,6 +18,7 @@ import { PROGRESS_INTERVAL_MS } from '@/utils/constants';
 export function useAudioEngine() {
   const playerRef = useRef<YT.Player | null>(null);
   const progressIntervalRef = useRef<number | null>(null);
+  const sessionStartRef = useRef<number | null>(null);
 
   // Read state we need to react to
   const currentTrack = usePlayerStore((state) => state.currentTrack);
@@ -31,6 +33,16 @@ export function useAudioEngine() {
   const setIsPlaying = usePlayerStore((state) => state.setIsPlaying);
   const setIsLoading = usePlayerStore((state) => state.setIsLoading);
   const nextTrack = usePlayerStore((state) => state.nextTrack);
+
+  // Gamification
+  const recordListenSession = useGamificationStore((state) => state.recordListenSession);
+
+  // Track time listened for gamification
+  const recordSession = (durationSeconds: number) => {
+    if (durationSeconds > 5) { // Only count if more than 5s played
+      recordListenSession(durationSeconds);
+    }
+  };
 
   // 1. Initialize YouTube IFrame API
   useEffect(() => {
@@ -59,14 +71,25 @@ export function useAudioEngine() {
                 setIsPlaying(true);
                 setDuration(event.target.getDuration());
                 startProgressTracker();
+                if (!sessionStartRef.current) {
+                  sessionStartRef.current = Date.now();
+                }
                 break;
               case window.YT.PlayerState.PAUSED:
                 setIsPlaying(false);
                 stopProgressTracker();
+                if (sessionStartRef.current) {
+                  recordSession((Date.now() - sessionStartRef.current) / 1000);
+                  sessionStartRef.current = null;
+                }
                 break;
               case window.YT.PlayerState.ENDED:
                 setIsPlaying(false);
                 stopProgressTracker();
+                if (sessionStartRef.current) {
+                  recordSession((Date.now() - sessionStartRef.current) / 1000);
+                  sessionStartRef.current = null;
+                }
                 nextTrack(); // Auto-advance queue
                 break;
               case window.YT.PlayerState.BUFFERING:
@@ -104,7 +127,7 @@ export function useAudioEngine() {
   const startProgressTracker = () => {
     stopProgressTracker();
     progressIntervalRef.current = window.setInterval(() => {
-      if (playerRef.current && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
+      if (playerRef.current && typeof playerRef.current.getPlayerState === 'function' && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
         const currentTime = playerRef.current.getCurrentTime();
         const duration = playerRef.current.getDuration();
         if (duration > 0) {
@@ -127,7 +150,7 @@ export function useAudioEngine() {
     if (typeof playerRef.current.loadVideoById !== 'function') return;
     
     // loadVideoById automatically starts playback.
-    // cueVideoById prepares it without playing (if we want paused state).
+    // cueVideoById prepares it without playing (if we want paused state)
     if (isPlaying) {
       playerRef.current.loadVideoById(currentTrack.videoId);
       setIsLoading(true);
