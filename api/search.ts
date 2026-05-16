@@ -58,7 +58,15 @@ export default async function handler(req: Request) {
     ytUrl.searchParams.set('maxResults', '15');
     ytUrl.searchParams.set('key', ytApiKey);
 
-    const ytRes = await fetch(ytUrl.toString());
+    let ytRes = await fetch(ytUrl.toString());
+    
+    // Fallback logic for secondary key if primary fails with 403 (Quota Exceeded)
+    if (!ytRes.ok && ytRes.status === 403 && process.env.YOUTUBE_API_KEY_2) {
+      console.warn('Primary API Key failed with 403. Trying backup key...');
+      ytUrl.searchParams.set('key', process.env.YOUTUBE_API_KEY_2);
+      ytRes = await fetch(ytUrl.toString());
+    }
+
     if (!ytRes.ok) {
       throw new Error(`YouTube API returned ${ytRes.status}`);
     }
