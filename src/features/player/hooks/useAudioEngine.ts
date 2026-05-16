@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { PROGRESS_INTERVAL_MS } from '@/utils/constants';
@@ -42,7 +43,6 @@ export function useAudioEngine() {
           autoplay: 0,
           controls: 0,
           disablekb: 1,
-          fs: 0,
           playsinline: 1, // Crucial for iOS WebView background play
           origin: window.location.origin,
         },

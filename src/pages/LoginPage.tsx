@@ -1,56 +1,121 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { PandaMascot } from '@/features/panda/components/PandaMascot';
-import { Play } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Music, Sparkles, Zap } from 'lucide-react';
+
+const FEATURES = [
+  { text: "Your Personal Oracle", icon: <Sparkles size={16} /> },
+  { text: "High-Fidelity Audio", icon: <Music size={16} /> },
+  { text: "AI Mood Engine", icon: <Zap size={16} /> }
+];
 
 export function LoginPage() {
   const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
 
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [featureIndex, setFeatureIndex] = useState(0);
+
   // If user is already logged in, redirect them back to home
   useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
+    if (user) navigate('/');
   }, [user, navigate]);
 
-  return (
-    <div className="relative w-full h-screen flex flex-col items-center justify-center overflow-hidden bg-surface-base">
-      {/* Background Aurora */}
-      <div className="absolute inset-0 mood-bg pointer-events-none z-0" />
-      
-      {/* Dynamic particles / floating orbs could go here if needed, but the aurora is already mesmerizing */}
-      
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="z-10 flex flex-col items-center w-full max-w-md px-6"
-      >
-        <div className="w-full glass-mood rounded-3xl p-10 flex flex-col items-center text-center shadow-2xl relative overflow-hidden">
-          
-          {/* subtle shine effect on the glass card */}
-          <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-20 transform -skew-x-12 animate-[shimmer_8s_infinite]" />
+  // Feature Carousel Timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFeatureIndex((prev) => (prev + 1) % FEATURES.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
+  const handleLogin = async () => {
+    if (isAuthenticating) return;
+    setIsAuthenticating(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Login failed:', error);
+      setIsAuthenticating(false); // Re-enable button gracefully if it fails
+    }
+  };
+
+  return (
+    <div className="relative w-full h-screen flex flex-col items-center justify-center overflow-hidden bg-[#050505]">
+      {/* Mesmerizing Background Aurora (Hardware Accelerated) */}
+      <div className="absolute inset-0 mood-bg pointer-events-none z-0 opacity-80" style={{ willChange: 'transform, opacity' }} />
+      
+      {/* Floating Orbs for extra depth */}
+      <motion.div 
+        animate={{ y: [-20, 20, -20], x: [-10, 10, -10], rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/20 rounded-full blur-[100px] pointer-events-none"
+      />
+      <motion.div 
+        animate={{ y: [20, -20, 20], x: [10, -10, 10], rotate: -360 }}
+        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-secondary/20 rounded-full blur-[100px] pointer-events-none"
+      />
+
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
+        className="z-10 flex flex-col items-center w-full max-w-[420px] px-6"
+      >
+        <div className="w-full glass-mood rounded-[2.5rem] p-10 flex flex-col items-center text-center shadow-2xl relative overflow-hidden group">
+          
+          {/* Dynamic Breathing Glow Border */}
+          <div className="absolute inset-0 rounded-[2.5rem] border border-white/10 group-hover:border-white/20 transition-colors duration-700" />
+          <motion.div 
+            animate={{ opacity: [0.1, 0.3, 0.1] }}
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            className="absolute -inset-[2px] rounded-[2.5rem] bg-gradient-to-tr from-brand-primary/30 via-transparent to-brand-secondary/30 blur-md -z-10"
+          />
+
+          {/* Interactive Mascot */}
           <motion.div 
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-            className="mb-8"
+            className="mb-8 relative"
           >
-            <div className="w-32 h-32 rounded-full bg-black/40 border border-white/10 shadow-glow-lg flex items-center justify-center p-2 relative">
-               <PandaMascot size={100} />
+            <div className="w-36 h-36 rounded-full bg-black/40 border border-white/10 shadow-[0_0_40px_rgba(255,255,255,0.05)] flex items-center justify-center p-2 relative backdrop-blur-md">
+               {/* Panda emotion dynamically reacts to hover and loading states */}
+               <PandaMascot 
+                 size={120} 
+                 emotion={isAuthenticating ? 'focus' : isHovering ? 'energy' : 'neutral'} 
+               />
+            </div>
+            
+            {/* Feature Carousel */}
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[180px] h-8 bg-black/60 backdrop-blur-md border border-white/10 rounded-full overflow-hidden flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={featureIndex}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-2 text-xs font-bold text-white/90"
+                >
+                  <span className="text-brand-primary">{FEATURES[featureIndex].icon}</span>
+                  {FEATURES[featureIndex].text}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </motion.div>
 
+          {/* Branding */}
           <motion.h1 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-4xl font-display font-extrabold text-white tracking-tight mb-3 text-gradient"
+            className="text-5xl font-display font-extrabold text-white tracking-tight mb-4 text-gradient mt-2"
           >
             Pandoos
           </motion.h1>
@@ -59,27 +124,46 @@ export function LoginPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="text-white/70 mb-10 font-medium max-w-[280px] italic drop-shadow-md text-lg"
+            className="text-white/60 mb-10 font-medium max-w-[280px] italic drop-shadow-md text-base leading-relaxed"
           >
             "Life is short relax like a Panda and enjoy music"
           </motion.p>
 
+          {/* Ultra-Robust Login Button */}
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: isAuthenticating ? 1 : 1.05 }}
+            whileTap={{ scale: isAuthenticating ? 1 : 0.95 }}
+            onHoverStart={() => setIsHovering(true)}
+            onHoverEnd={() => setIsHovering(false)}
+            onClick={handleLogin}
+            disabled={isAuthenticating}
             transition={{ delay: 0.6 }}
-            onClick={signInWithGoogle}
-            className="w-full flex items-center justify-center gap-3 bg-white text-black py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+            className="relative w-full flex items-center justify-center gap-3 bg-white text-black py-4 rounded-xl font-extrabold text-lg shadow-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all overflow-hidden"
           >
-            <svg viewBox="0 0 24 24" className="w-6 h-6 bg-transparent">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
+            {isAuthenticating ? (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-2"
+              >
+                <Loader2 size={20} className="animate-spin" />
+                <span>Connecting...</span>
+              </motion.div>
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24" className="w-6 h-6 bg-transparent relative z-10">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span className="relative z-10 tracking-tight">Unlock Your Vibe</span>
+                {/* Shine effect on button */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
+              </>
+            )}
           </motion.button>
           
           <motion.div 
@@ -90,7 +174,8 @@ export function LoginPage() {
           >
              <button 
                onClick={() => navigate('/')} 
-               className="text-sm font-medium text-white/40 hover:text-white transition-colors"
+               disabled={isAuthenticating}
+               className={`text-sm font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest ${isAuthenticating ? 'opacity-50 cursor-not-allowed' : ''}`}
              >
                Skip for now
              </button>
