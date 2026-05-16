@@ -1,5 +1,6 @@
 import type { Track, YouTubeSearchItem } from '@/types/track';
 import { YT_THUMB } from '@/utils/constants';
+import { MOOD_SEEDS } from '@/data/moodSeeds';
 
 function mapSearchItemToTrack(item: YouTubeSearchItem): Track {
   const videoId = item.id.videoId;
@@ -22,6 +23,25 @@ function mapSearchItemToTrack(item: YouTubeSearchItem): Track {
 }
 
 export async function searchTracks(query: string): Promise<Track[]> {
+  // 1. Intercept predefined mood queries to avoid API quota hits (Layer 2 Scalability)
+  const MOOD_QUERIES: Record<string, string> = {
+    'lofi chill relax aesthetic': 'chill',
+    'high energy upbeat edm hits': 'energy',
+    'deep focus ambient electronic': 'focus',
+    'romantic love songs acoustic': 'romantic',
+    'heavy workout gym phonk': 'workout',
+    'sad emotional acoustic': 'heartbroken',
+    'sleep ambient delta waves': 'sleepy',
+    'late night drive synthwave retro': 'latenight',
+    'happy feel good uplifting pop': 'happy',
+  };
+
+  const moodId = MOOD_QUERIES[query.toLowerCase().trim()];
+  if (moodId && MOOD_SEEDS[moodId]) {
+    // Return seeds instantly, wrapped in a resolved promise
+    return Promise.resolve(MOOD_SEEDS[moodId]);
+  }
+
   let res: Response;
   
   // Local DEV fallback so `npm run dev` works without Vercel CLI
