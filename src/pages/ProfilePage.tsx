@@ -1,204 +1,108 @@
-import { ALL_BADGES, type Badge, PANDA_RANKS, getRankForXP, getXPProgress, computeXP, useGamificationStore } from '@/stores/useGamificationStore';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LogOut, Settings, Clock, Zap, Award, Music, TrendingUp, ChevronRight, Heart } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { usePlayerStore } from '@/stores/usePlayerStore';
-import { LogOut, Flame, Clock, Trophy, Heart, Music, Star, Share2, Lock } from 'lucide-react';
+import {
+  useGamificationStore,
+  computeXP,
+  getRankForXP,
+  getXPProgress,
+  ALL_BADGES,
+  PANDA_RANKS,
+} from '@/stores/useGamificationStore';
 import { APP_VERSION } from '@/utils/constants';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
 
 // ─────────────────────────────────────────────
-// Badge Card
+// Mini badge tile — compact & elegant
 // ─────────────────────────────────────────────
-function BadgeCard({ badge, earned, index }: { badge: Badge; earned: boolean; index: number }) {
-  const [copied, setCopied] = useState(false);
+function BadgeTile({ id, earned, index }: { id: string; earned: boolean; index: number }) {
+  const badge = ALL_BADGES.find((b) => b.id === id)!;
+  if (!badge) return null;
 
-  const rarityLabel = {
-    common: 'Common',
-    rare: 'Rare',
-    epic: 'Epic',
-    legendary: 'Legendary ✨',
+  const rarityGlow = {
+    common:    '',
+    rare:      'shadow-[0_0_12px_rgba(99,102,241,0.4)]',
+    epic:      'shadow-[0_0_16px_rgba(167,139,250,0.5)]',
+    legendary: 'shadow-[0_0_20px_rgba(251,191,36,0.6)]',
   }[badge.rarity];
-
-  const rarityBorder = {
-    common: 'border-white/10',
-    rare: 'border-blue-400/40',
-    epic: 'border-purple-400/50',
-    legendary: 'border-amber-400/60',
-  }[badge.rarity];
-
-  const handleShare = () => {
-    const text = `🐼 I just earned the "${badge.name}" ${badge.emoji} badge on Pandoos Music! ${badge.description} #PandoosMusic #PandaLife`;
-    if (navigator.share) {
-      navigator.share({ title: 'My Pandoos Badge!', text });
-    } else {
-      navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.4, ease: 'easeOut' }}
-      className={`relative group rounded-2xl border ${rarityBorder} p-4 flex flex-col items-center gap-2 transition-all duration-300 ${
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.03, duration: 0.3 }}
+      title={badge.name}
+      className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all duration-300 ${
         earned
-          ? 'bg-white/5 hover:bg-white/8 hover:scale-[1.03]'
-          : 'bg-white/[0.02] opacity-50 grayscale'
+          ? `bg-white/[0.04] border-white/10 hover:border-white/20 ${rarityGlow}`
+          : 'bg-white/[0.02] border-white/5 opacity-30 grayscale'
       }`}
     >
-      {/* Glow for earned badges */}
-      {earned && badge.rarity !== 'common' && (
-        <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${badge.color} opacity-10 blur-sm pointer-events-none`} />
-      )}
-
-      {/* Emoji */}
-      <div className={`text-3xl w-14 h-14 flex items-center justify-center rounded-xl bg-gradient-to-br ${earned ? badge.color : 'from-gray-600 to-gray-700'} shadow-lg`}>
-        {earned ? badge.emoji : <Lock size={20} className="text-white/40" />}
+      {/* Badge icon circle */}
+      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${earned ? badge.color : 'from-gray-700 to-gray-800'} flex items-center justify-center text-xl shadow-md`}>
+        {earned ? badge.emoji : '🔒'}
       </div>
-
-      {/* Name */}
-      <p className="text-xs font-bold text-white text-center leading-tight mt-1">{badge.name}</p>
-
-      {/* Rarity */}
-      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-        badge.rarity === 'legendary' ? 'bg-amber-500/20 text-amber-400' :
-        badge.rarity === 'epic' ? 'bg-purple-500/20 text-purple-400' :
-        badge.rarity === 'rare' ? 'bg-blue-500/20 text-blue-400' :
-        'bg-white/10 text-white/50'
-      }`}>{rarityLabel}</span>
-
-      {/* Share button — only show on hover for earned badges */}
-      {earned && (
-        <button
-          onClick={handleShare}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white/10 rounded-lg hover:bg-white/20"
-          title="Share badge"
-        >
-          {copied ? <span className="text-[10px] text-green-400 font-bold">✓</span> : <Share2 size={12} className="text-white/70" />}
-        </button>
-      )}
+      <span className="text-[10px] font-semibold text-white/60 text-center leading-tight line-clamp-2">
+        {badge.name}
+      </span>
     </motion.div>
   );
 }
 
 // ─────────────────────────────────────────────
-// Stat Pill
+// Thin stat row
 // ─────────────────────────────────────────────
-function StatPill({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) {
+function StatRow({ icon, label, value, sub }: {
+  icon: React.ReactNode; label: string; value: string | number; sub?: string;
+}) {
   return (
-    <div className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl bg-white/5 border border-white/8 min-w-0 flex-1`}>
-      <div className={`p-2 rounded-xl bg-gradient-to-br ${color} shadow-md`}>
-        {icon}
-      </div>
-      <span className="text-xl font-display font-extrabold text-white">{value}</span>
-      <span className="text-[11px] text-white/50 font-medium">{label}</span>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// XP Ring
-// ─────────────────────────────────────────────
-function XPRing({ xp, rank, progress }: { xp: number; rank: typeof PANDA_RANKS[0]; progress: ReturnType<typeof getXPProgress> }) {
-  const circumference = 2 * Math.PI * 54;
-  const dash = (progress.percent / 100) * circumference;
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-36 h-36">
-        {/* Glow */}
-        <div className={`absolute inset-4 rounded-full bg-gradient-to-br ${rank.color} opacity-20 blur-xl`} />
-        {/* Ring */}
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" />
-          <circle
-            cx="60" cy="60" r="54"
-            fill="none"
-            strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${circumference}`}
-            className="transition-all duration-1000"
-            style={{ stroke: 'url(#xpGrad)' }}
-          />
-          <defs>
-            <linearGradient id="xpGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="hsl(var(--color-primary))" />
-              <stop offset="100%" stopColor="hsl(var(--color-accent))" />
-            </linearGradient>
-          </defs>
-        </svg>
-        {/* Center */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl">{rank.emoji}</span>
-          <span className="text-xs font-bold text-white/80 mt-0.5">{xp} XP</span>
+    <div className="flex items-center justify-between py-3.5 border-b border-white/[0.06] last:border-0">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-xl bg-white/[0.06] flex items-center justify-center text-white/50">
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm text-white/80 font-medium">{label}</p>
+          {sub && <p className="text-[11px] text-white/30">{sub}</p>}
         </div>
       </div>
-      <p className={`mt-3 text-sm font-bold bg-gradient-to-r ${rank.color} bg-clip-text text-transparent`}>
-        {rank.name}
-      </p>
-      <p className="text-[11px] text-white/40 mt-0.5">{progress.current} / {progress.next} XP to next rank</p>
+      <span className="text-base font-bold text-white font-display">{value}</span>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────
-// Top Mood Card
+// Rank bar — clean horizontal progress
 // ─────────────────────────────────────────────
-function TopMoodBadge({ moodCounts }: { moodCounts: Record<string, number> }) {
-  const entries = Object.entries(moodCounts).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return null;
-  const [topMood, topCount] = entries[0]!;
-
-  const moodEmoji: Record<string, string> = {
-    happy: '😊', sad: '😢', chill: '😎', energy: '⚡',
-    romantic: '💕', angry: '😤', sleepy: '😴', workout: '💪',
-  };
+function RankProgressBar({ xp, rank, progress }: {
+  xp: number;
+  rank: (typeof PANDA_RANKS)[0];
+  progress: { current: number; next: number; percent: number };
+}) {
+  const nextRankIndex = PANDA_RANKS.findIndex((r) => r.name === rank.name) + 1;
+  const nextRank = PANDA_RANKS[nextRankIndex];
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/8">
-      <span className="text-2xl">{moodEmoji[topMood] ?? '🎵'}</span>
-      <div>
-        <p className="text-xs text-white/50">Top Mood</p>
-        <p className="text-sm font-bold text-white capitalize">{topMood}</p>
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">{rank.name}</span>
+        {nextRank && (
+          <span className="text-xs font-semibold text-white/30">{nextRank.name}</span>
+        )}
       </div>
-      <div className="ml-auto text-right">
-        <p className="text-xs text-white/50">Sessions</p>
-        <p className="text-sm font-bold text-brand-primary">{topCount}</p>
+      <div className="h-1.5 w-full bg-white/[0.07] rounded-full overflow-hidden">
+        <motion.div
+          className={`h-full rounded-full bg-gradient-to-r ${rank.color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${progress.percent}%` }}
+          transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+        />
       </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Recent Listening History
-// ─────────────────────────────────────────────
-function RecentHistory() {
-  const history = usePlayerStore((s) => s.history).slice(0, 6);
-
-  if (!history.length) return null;
-
-  return (
-    <div className="mt-4">
-      <h3 className="text-sm font-bold text-white/70 mb-3 flex items-center gap-2">
-        <Music size={14} />
-        Recent Jams
-      </h3>
-      <div className="flex flex-col gap-2">
-        {history.map((track, i) => (
-          <div key={`${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-            <img
-              src={`https://img.youtube.com/vi/${track.videoId}/default.jpg`}
-              alt={track.title}
-              className="w-10 h-10 rounded-lg object-cover shrink-0"
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{track.title}</p>
-              <p className="text-xs text-white/50 truncate">{track.artist}</p>
-            </div>
-          </div>
-        ))}
+      <div className="flex justify-between mt-1.5">
+        <span className="text-[11px] text-white/30">{progress.current} XP</span>
+        <span className="text-[11px] text-white/30">{progress.next} XP</span>
       </div>
     </div>
   );
@@ -209,197 +113,292 @@ function RecentHistory() {
 // ─────────────────────────────────────────────
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user);
-  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
   const signOut = useAuthStore((s) => s.signOut);
-  const [activeTab, setActiveTab] = useState<'badges' | 'history' | 'stats'>('badges');
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
+  const navigate = useNavigate();
 
-  const gamification = useGamificationStore();
-  const xp = computeXP(gamification);
+  const [tab, setTab] = useState<'overview' | 'badges' | 'history'>('overview');
+
+  const g = useGamificationStore();
+  const history = usePlayerStore((s) => s.history);
+  const xp = computeXP(g);
   const rank = getRankForXP(xp);
   const xpProgress = getXPProgress(xp);
-  const earnedCount = gamification.earnedBadges.length;
-  const listenHours = Math.floor(gamification.listenMinutes / 60);
+  const earnedBadges = g.earnedBadges;
+  const listenHours = (g.listenMinutes / 60).toFixed(1);
 
-  // Award first_song if player history exists
-  const history = usePlayerStore((s) => s.history);
-  if (history.length > 0 && !gamification.earnedBadges.includes('first_song')) {
-    gamification.checkAndAwardBadges();
+  const topMood = Object.entries(g.moodSessionCounts).sort((a, b) => b[1] - a[1])[0];
+
+  // If not signed in — minimal, premium sign-in prompt
+  if (!user) {
+    return (
+      <div className="w-full min-h-full flex flex-col items-center justify-center px-6 pb-24 gap-8">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-4xl">
+            🐾
+          </div>
+          <div>
+            <h1 className="text-2xl font-display font-bold text-white mb-2">Your Panda Profile</h1>
+            <p className="text-sm text-white/40 leading-relaxed max-w-xs">
+              Sign in to track your listening journey, earn badges, and build your Panda legacy.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => signInWithGoogle()}
+          className="flex items-center gap-3 px-8 py-4 bg-white text-gray-900 font-bold rounded-2xl shadow-xl text-sm hover:opacity-90 active:scale-95 transition-all w-full max-w-xs justify-center"
+        >
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" className="w-4 h-4" />
+          Continue with Google
+        </button>
+        <p className="text-xs text-white/20 text-center">
+          Free forever. No credit card needed.
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="w-full min-h-full pb-32 scroll-container">
-      {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-b-3xl mb-6 pb-8 pt-4 px-4">
-        {/* Background aurora */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${rank.color} opacity-20 pointer-events-none`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface-base to-transparent pointer-events-none" />
 
-        <div className="relative flex flex-col items-center gap-4">
-          {/* Avatar */}
-          <div className={`relative w-24 h-24 rounded-full overflow-hidden border-4 bg-gradient-to-br ${rank.color} p-0.5 shadow-xl`}>
-            <div className="w-full h-full rounded-full overflow-hidden bg-surface-base">
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl bg-surface-elevated">
-                  🐼
+      {/* ── Hero ── */}
+      <div className="relative px-5 pt-6 pb-8">
+        {/* Subtle gradient backdrop */}
+        <div className={`absolute inset-0 bg-gradient-to-b ${rank.color} opacity-[0.08] pointer-events-none`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-base via-transparent to-transparent pointer-events-none" />
+
+        <div className="relative flex items-end justify-between">
+          {/* Avatar + name */}
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              {/* Rank ring */}
+              <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${rank.color} p-[2px] shadow-lg`}>
+                <div className="w-full h-full rounded-[14px] bg-surface-base overflow-hidden">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl bg-white/[0.03]">
+                      {rank.emoji}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+              {/* Online dot */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-surface-base" />
             </div>
-            {/* Online indicator */}
-            <div className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-surface-base" />
+
+            <div>
+              <h1 className="text-xl font-display font-bold text-white leading-tight">
+                {user.username.split(' ')[0]}
+              </h1>
+              <p className={`text-xs font-semibold bg-gradient-to-r ${rank.color} bg-clip-text text-transparent`}>
+                {rank.emoji} {rank.name}
+              </p>
+              <p className="text-[11px] text-white/30 mt-0.5">{xp} XP total</p>
+            </div>
           </div>
 
-          {user ? (
-            <>
-              <div className="text-center">
-                <h1 className="text-2xl font-display font-extrabold text-white">{user.username}</h1>
-                <p className="text-sm text-white/50 mt-0.5">{user.email}</p>
-              </div>
-              <XPRing xp={xp} rank={rank} progress={xpProgress} />
-            </>
-          ) : (
-            <div className="text-center py-6">
-              <span className="text-5xl mb-4 block">🐼</span>
-              <h2 className="text-xl font-bold text-white mb-2">Meet Your Panda!</h2>
-              <p className="text-sm text-white/60 mb-6 max-w-xs">Sign in to unlock your Panda Rank, earn badges, and track your music journey.</p>
-              <button
-                onClick={() => signInWithGoogle()}
-                className="flex items-center gap-3 px-8 py-3.5 bg-white text-gray-900 font-bold rounded-2xl shadow-xl hover:shadow-white/20 transition-all hover:scale-105"
-              >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-                Continue with Google
-              </button>
-            </div>
-          )}
+          {/* Settings */}
+          <button className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
+            <Settings size={16} />
+          </button>
+        </div>
+
+        {/* XP progress bar */}
+        <div className="relative mt-6">
+          <RankProgressBar xp={xp} rank={rank} progress={xpProgress} />
         </div>
       </div>
 
-      {user && (
-        <div className="px-4 space-y-6">
-          {/* ── Stats Row ── */}
-          <div className="flex gap-3">
-            <StatPill icon={<Flame size={16} className="text-white" />} label="Day Streak" value={gamification.streakDays} color="from-orange-400 to-red-500" />
-            <StatPill icon={<Clock size={16} className="text-white" />} label="Hrs Listened" value={listenHours} color="from-blue-400 to-indigo-500" />
-            <StatPill icon={<Trophy size={16} className="text-white" />} label="Badges" value={`${earnedCount}/${ALL_BADGES.length}`} color="from-amber-400 to-orange-500" />
-            <StatPill icon={<Heart size={16} className="text-white" />} label="Liked" value={gamification.likedSongs.length} color="from-pink-400 to-rose-500" />
-          </div>
+      {/* ── Quick stats strip ── */}
+      <div className="px-5 mb-6">
+        <div className="grid grid-cols-3 gap-2.5">
+          {[
+            { value: g.streakDays, label: 'Day Streak', icon: '🔥' },
+            { value: listenHours + 'h', label: 'Listened', icon: '⏱' },
+            { value: `${earnedBadges.length}/${ALL_BADGES.length}`, label: 'Badges', icon: '🏅' },
+          ].map(({ value, label, icon }) => (
+            <div
+              key={label}
+              className="bg-white/[0.03] border border-white/[0.07] rounded-2xl px-3 py-3.5 flex flex-col items-center gap-1"
+            >
+              <span className="text-base">{icon}</span>
+              <span className="text-lg font-display font-extrabold text-white leading-none">{value}</span>
+              <span className="text-[10px] text-white/35 font-medium">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Top Mood */}
-          {Object.keys(gamification.moodSessionCounts).length > 0 && (
-            <TopMoodBadge moodCounts={gamification.moodSessionCounts} />
-          )}
+      {/* ── Tab bar ── */}
+      <div className="px-5 mb-5">
+        <div className="flex bg-white/[0.03] rounded-xl p-1 border border-white/[0.06]">
+          {(['overview', 'badges', 'history'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize transition-all ${
+                tab === t
+                  ? 'bg-white/10 text-white shadow'
+                  : 'text-white/35 hover:text-white/60'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          {/* ── Tabs ── */}
-          <div className="flex rounded-2xl bg-white/5 p-1 gap-1">
-            {(['badges', 'history', 'stats'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all capitalize ${
-                  activeTab === tab
-                    ? 'bg-white/15 text-white shadow'
-                    : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+      {/* ── Tab content ── */}
+      <div className="px-5">
+        <AnimatePresence mode="wait">
 
-          {/* ── Tab Content ── */}
-          <AnimatePresence mode="wait">
-            {activeTab === 'badges' && (
-              <motion.div key="badges" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {/* Earned count banner */}
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-bold text-white/70">
-                    <span className="text-brand-primary text-lg font-extrabold">{earnedCount}</span> / {ALL_BADGES.length} badges earned
-                  </p>
-                  {earnedCount === ALL_BADGES.length && (
-                    <span className="text-xs bg-amber-400/20 text-amber-400 px-2 py-1 rounded-full font-bold">ALL UNLOCKED 👑</span>
-                  )}
-                </div>
+          {/* OVERVIEW */}
+          {tab === 'overview' && (
+            <motion.div key="overview"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              {/* Listening stats card */}
+              <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl px-4 py-1">
+                <StatRow icon={<Clock size={14} />} label="Total Listening" value={`${listenHours}h`} sub="All time" />
+                <StatRow icon={<Zap size={14} />} label="Longest Streak" value={`${g.longestStreak}d`} sub="Personal best" />
+                <StatRow icon={<Heart size={14} />} label="Liked Songs" value={g.likedSongs.length} />
+                <StatRow icon={<TrendingUp size={14} />} label="Total XP" value={xp} sub="Across all activity" />
+              </div>
 
-                {/* Badge grid */}
-                <div className="grid grid-cols-3 gap-3">
-                  {ALL_BADGES.map((badge, i) => (
-                    <BadgeCard
-                      key={badge.id}
-                      badge={badge}
-                      earned={gamification.earnedBadges.includes(badge.id)}
-                      index={i}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'history' && (
-              <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <RecentHistory />
-              </motion.div>
-            )}
-
-            {activeTab === 'stats' && (
-              <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                <div className="space-y-3">
-                  {[
-                    { label: 'Total Minutes Listened', value: Math.floor(gamification.listenMinutes), icon: '⏱️' },
-                    { label: 'Longest Streak (days)', value: gamification.longestStreak, icon: '🔥' },
-                    { label: 'Unique Moods Tried', value: Object.keys(gamification.moodSessionCounts).length, icon: '🎭' },
-                    { label: 'Night Owl Sessions', value: gamification.nightOwlSessions, icon: '🌙' },
-                    { label: 'Early Bird Sessions', value: gamification.earlyBirdSessions, icon: '🌅' },
-                    { label: 'Liked Songs', value: gamification.likedSongs.length, icon: '💕' },
-                    { label: 'Total XP Earned', value: xp, icon: '⭐' },
-                  ].map(({ label, value, icon }) => (
-                    <div key={label} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/8">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{icon}</span>
-                        <span className="text-sm font-medium text-white/70">{label}</span>
-                      </div>
-                      <span className="text-lg font-extrabold text-white font-display">{value}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Rank progression */}
-                <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/8">
-                  <p className="text-sm font-bold text-white/70 mb-4 flex items-center gap-2"><Star size={14} /> Rank Progression</p>
-                  <div className="space-y-2">
-                    {PANDA_RANKS.map((r) => (
-                      <div key={r.name} className={`flex items-center gap-3 p-2 rounded-xl ${rank.name === r.name ? 'bg-white/10 border border-white/20' : ''}`}>
-                        <span className="text-lg w-8 text-center">{r.emoji}</span>
-                        <span className={`text-sm font-semibold flex-1 ${rank.name === r.name ? 'text-white' : 'text-white/40'}`}>{r.name}</span>
-                        <span className="text-xs text-white/30">{r.minXP} XP</span>
-                        {rank.name === r.name && <span className="text-[10px] bg-brand-primary/30 text-brand-primary px-2 py-0.5 rounded-full font-bold">CURRENT</span>}
-                      </div>
-                    ))}
+              {/* Top mood */}
+              {topMood && (
+                <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] text-white/35 uppercase tracking-wider mb-1">Top Mood</p>
+                    <p className="text-base font-bold text-white capitalize">{topMood[0]}</p>
+                    <p className="text-[11px] text-white/30">{topMood[1]} sessions</p>
+                  </div>
+                  <div className="text-4xl">
+                    {{ happy: '😊', sad: '😢', chill: '😎', energy: '⚡', romantic: '💕', angry: '😤', sleepy: '😴', workout: '💪' }[topMood[0]] ?? '🎵'}
                   </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
 
-          {/* ── Logout ── */}
-          <div className="pt-4 border-t border-white/5">
-            <button
-              onClick={() => signOut()}
-              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold border border-red-500/20 transition-all hover:scale-[1.02] active:scale-95"
+              {/* Rank ladder */}
+              <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+                <p className="text-[11px] text-white/35 uppercase tracking-wider px-4 pt-4 pb-2">Rank Ladder</p>
+                {PANDA_RANKS.map((r, i) => {
+                  const isCurrent = r.name === rank.name;
+                  const isPast = xp >= r.minXP;
+                  return (
+                    <div
+                      key={r.name}
+                      className={`flex items-center gap-3 px-4 py-3 border-t border-white/[0.04] transition-colors ${isCurrent ? 'bg-white/[0.05]' : ''}`}
+                    >
+                      <span className="text-lg w-7 text-center">{r.emoji}</span>
+                      <span className={`text-sm font-semibold flex-1 ${isPast ? 'text-white' : 'text-white/25'}`}>{r.name}</span>
+                      <span className="text-[11px] text-white/25">{r.minXP} XP</span>
+                      {isCurrent && (
+                        <span className="text-[10px] font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full">
+                          Now
+                        </span>
+                      )}
+                      {isPast && !isCurrent && (
+                        <span className="text-emerald-500 text-xs">✓</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* BADGES */}
+          {tab === 'badges' && (
+            <motion.div key="badges"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             >
-              <LogOut size={18} />
-              Sign Out
-            </button>
-          </div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-white/35 uppercase tracking-wider">
+                  {earnedBadges.length} of {ALL_BADGES.length} earned
+                </p>
+                <div className="h-1 flex-1 mx-3 bg-white/[0.07] rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-brand-primary to-brand-secondary rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(earnedBadges.length / ALL_BADGES.length) * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                  />
+                </div>
+              </div>
 
-          {/* ── Footer ── */}
-          <div className="flex flex-col items-center gap-2 text-white/30 pt-4 pb-6">
-            <img src="/panda_favicon.png" alt="Pandoos" className="w-8 h-8 opacity-30 grayscale object-contain" />
-            <p className="text-xs font-semibold tracking-widest">PANDOOS MUSIC</p>
-            <p className="text-[10px]">v{APP_VERSION} · Where Pandas Vibe 🐼</p>
-          </div>
+              <div className="grid grid-cols-4 gap-2">
+                {ALL_BADGES.map((badge, i) => (
+                  <BadgeTile
+                    key={badge.id}
+                    id={badge.id}
+                    earned={earnedBadges.includes(badge.id)}
+                    index={i}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* HISTORY */}
+          {tab === 'history' && (
+            <motion.div key="history"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            >
+              {history.length === 0 ? (
+                <div className="flex flex-col items-center py-16 gap-3 text-center">
+                  <Music size={32} className="text-white/15" />
+                  <p className="text-sm text-white/30">No songs played yet.<br />Start your first session.</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {history.slice(0, 20).map((track, i) => (
+                    <motion.div
+                      key={`${track.id}-${i}`}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.03] transition-colors group"
+                    >
+                      <span className="text-xs text-white/20 w-5 text-right shrink-0">{i + 1}</span>
+                      <img
+                        src={`https://img.youtube.com/vi/${track.videoId}/default.jpg`}
+                        alt=""
+                        className="w-10 h-10 rounded-lg object-cover shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-white truncate">{track.title}</p>
+                        <p className="text-[11px] text-white/35 truncate">{track.artist}</p>
+                      </div>
+                      <ChevronRight size={14} className="text-white/15 shrink-0" />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
+
+      {/* ── Sign out + footer ── */}
+      <div className="px-5 mt-8 flex flex-col gap-3">
+        <button
+          onClick={() => { signOut(); navigate('/login'); }}
+          className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-white/50 hover:text-red-400 hover:border-red-500/20 hover:bg-red-500/[0.06] text-sm font-semibold transition-all"
+        >
+          <LogOut size={15} />
+          Sign Out
+        </button>
+
+        <div className="flex flex-col items-center gap-1 py-4 text-white/15">
+          <img src="/panda_favicon.png" alt="" className="w-6 h-6 opacity-20 object-contain grayscale" />
+          <p className="text-[10px] font-semibold tracking-widest uppercase">Pandoos Music · v{APP_VERSION}</p>
         </div>
-      )}
+      </div>
+
     </div>
   );
 }
