@@ -1,6 +1,7 @@
 import React from 'react';
-import { ChevronDown, MoreVertical } from 'lucide-react';
+import { ChevronDown, MoreVertical, Heart } from 'lucide-react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
+import { useGamificationStore } from '@/stores/useGamificationStore';
 import { useUIStore } from '@/stores/useUIStore';
 import { useColorExtractor } from '@/features/player/hooks/useColorExtractor';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -16,6 +17,11 @@ export function FullscreenPlayer() {
   const isPlayerOpen = useUIStore((state) => state.isPlayerOpen);
   const closePlayer = useUIStore((state) => state.closePlayer);
   const sleepTimerEnd = usePlayerStore((state) => state.sleepTimerEnd);
+  
+  const likedSongs = useGamificationStore((state) => state.likedSongs);
+  const toggleLike = useGamificationStore((state) => state.toggleLike);
+  
+  const isLiked = currentTrack ? likedSongs.includes(currentTrack.id) : false;
 
   const [isOptionsOpen, setIsOptionsOpen] = React.useState(false);
 
@@ -86,9 +92,9 @@ export function FullscreenPlayer() {
         {/* Bottom Controls Area (Clean Stack) */}
         <div className="w-full flex flex-col items-center justify-center gap-5 pb-6 px-6 md:px-12 shrink-0">
           
-          {/* Track Info */}
+          {/* Track Info & Like Button */}
           <div className="flex flex-col w-full max-w-lg text-center md:text-left md:flex-row md:items-end md:justify-between px-2">
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 flex-1">
               <h2 className="text-2xl md:text-3xl font-display font-extrabold text-white truncate drop-shadow-xl tracking-tight">
                 {currentTrack?.title ?? 'Not Playing'}
               </h2>
@@ -96,6 +102,18 @@ export function FullscreenPlayer() {
                 {currentTrack?.artist ?? 'Select a track'}
               </p>
             </div>
+            {currentTrack && (
+              <button 
+                onClick={() => toggleLike(currentTrack.id)}
+                className="mt-4 md:mt-0 md:ml-4 self-center md:self-end p-3 rounded-full hover:bg-white/10 transition-colors active:scale-95 touch-highlight flex-shrink-0"
+              >
+                <Heart 
+                  size={28} 
+                  className={isLiked ? "text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.6)]" : "text-white/60"} 
+                  fill={isLiked ? "currentColor" : "none"} 
+                />
+              </button>
+            )}
           </div>
 
           {/* SeekBar */}
