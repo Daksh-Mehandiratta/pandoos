@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { MobileLayout } from '@/components/layout/MobileLayout';
+import { DesktopLayout } from '@/components/layout/DesktopLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAudioEngine } from '@/features/player/hooks/useAudioEngine';
 import { useMediaSession } from '@/hooks/useMediaSession';
@@ -34,7 +34,7 @@ export function App() {
 
   return (
     <Routes>
-      <Route element={<MobileLayout />}>
+      <Route element={<DesktopLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/library" element={<LibraryPage />} />

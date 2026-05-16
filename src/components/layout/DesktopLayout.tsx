@@ -1,0 +1,36 @@
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
+import { usePlayerStore } from '@/stores/usePlayerStore';
+
+// We will build DesktopPlayer and DesktopFullscreenPlayer next
+import { DesktopPlayer } from '@/features/player/components/DesktopPlayer';
+import { FullscreenPlayer } from '@/features/player/components/FullscreenPlayer';
+
+export function DesktopLayout() {
+  const currentTrack = usePlayerStore((state) => state.currentTrack);
+
+  return (
+    <div className="flex h-screen w-full bg-surface-base overflow-hidden relative">
+      {/* Aurora Background covering the whole app */}
+      <div className="fixed inset-0 mood-bg -z-20 pointer-events-none" />
+
+      {/* Left Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content Area */}
+      {/* It needs to scroll independently and have padding at the bottom for the player */}
+      <main className="flex-1 h-full overflow-y-auto overflow-x-hidden scroll-container pb-[100px] relative z-10">
+        <Outlet />
+      </main>
+
+      {/* Persistent Bottom Player */}
+      {currentTrack && (
+        <DesktopPlayer />
+      )}
+
+      {/* The Fullscreen Player overlays everything when active */}
+      <FullscreenPlayer />
+    </div>
+  );
+}
