@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================================
+   PANDOOS DESIGN SYSTEM — CSS Custom Properties (Token Layer)
+   
+   These CSS variables are the single source of truth for all colors.
+   The Mood Engine (useColorExtractor + useThemeStore) mutates these
+   at runtime based on album art colors, triggering 60fps smooth
+   transitions via CSS transitions set below.
+   
+   Architectural note: We use CSS variables instead of Tailwind's
+   JIT classes for dynamic colors because:
+   1. CSS vars can be transitioned (Tailwind classes cannot)
+   2. They update instantly without React re-renders
+   3. They work natively in Capacitor WebView without any polyfills
+   ================================================================ */
+
+@layer base {
+  :root {
+    /* ---- Brand / Mood Colors (mutated by Mood Engine) ---- */
+    --color-primary: 270 80% 68%;       /* Default: Panda Purple */
+    --color-secondary: 200 90% 60%;     /* Default: Electric Blue */
+    --color-accent: 320 85% 65%;        /* Default: Vibrant Pink */
+    --color-muted: 270 25% 55%;         /* Desaturated primary */
+
+    /* ---- Surfaces (static dark theme) ---- */
+    --surface-base: 240 15% 5%;         /* Near-black base background */
+    --surface-elevated: 240 12% 9%;     /* Cards, sheets, elevated content */
+    --surface-overlay: 240 10% 13%;     /* Modals, overlays, tooltips */
+
+    /* ---- Text ---- */
+    --text-primary: 0 0% 96%;
+    --text-secondary: 240 10% 70%;
+    --text-muted: 240 8% 48%;
+
+    /* ---- Glass Effect Variables ---- */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-blur: 20px;
+
+    /* ---- Layout ---- */
+    --bottom-nav-height: 64px;
+    --mini-player-height: 68px;
+    --top-bar-height: 56px;
+
+    /* ---- Safe area insets (Capacitor / notch support) ---- */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Smooth color transitions when Mood Engine updates variables.
+     Only transition color-related properties to avoid expensive
+     layout recalculations during transitions. */
+  * {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 600ms;
+  }
+
+  /* Override transition for elements that need instant response */
+  .no-transition,
+  .no-transition * {
+    transition: none !important;
+  }
+
+  html {
+    /* Prevent rubber-band scroll on iOS Safari (Capacitor issue) */
+    overflow: hidden;
+    height: 100%;
+    -webkit-tap-highlight-color: transparent;
+    /* Smooth scrolling for all scrollable elements */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans;
+    background-color: hsl(var(--surface-base));
+    color: hsl(var(--text-primary));
+    height: 100%;
+    overflow: hidden;
+    /* Prevent text size adjustment on orientation change (iOS) */
+    -webkit-text-size-adjust: 100%;
+    /* Enable momentum scrolling on iOS within scroll containers */
+    -webkit-overflow-scrolling: touch;
+    /* Font rendering optimization */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  /* ---- Glassmorphism Card ---- */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Mood-reactive glass — border uses current mood accent color */
+  .glass-mood {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid hsl(var(--color-primary) / 0.25);
+    box-shadow: 0 0 0 1px hsl(var(--color-primary) / 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* ---- Scrollable container with hidden scrollbar ---- */
+  /* Capacitor WebView on iOS needs overflow: auto (not scroll) */
+  .scroll-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scroll-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ---- Mood gradient background ---- */
+  .mood-bg {
+    background: radial-gradient(
+        ellipse 80% 60% at 50% -10%,
+        hsl(var(--color-primary) / 0.25) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 100% 100%,
+        hsl(var(--color-secondary) / 0.15) 0%,
+        transparent 60%
+      ),
+      hsl(var(--surface-base));
+  }
+
+  /* ---- Typography utilities ---- */
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--color-primary)),
+      hsl(var(--color-accent))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ---- Touch feedback (replaces hover for mobile) ---- */
+  .touch-highlight {
+    @apply active:scale-95;
+    transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ---- Bottom sheet drag handle ---- */
+  .drag-handle {
+    @apply mx-auto rounded-full;
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* ---- Vinyl record grooves ---- */
+  .vinyl-grooves {
+    background: repeating-radial-gradient(
+      circle at center,
+      transparent 0px,
+      transparent 4px,
+      rgba(0, 0, 0, 0.15) 4px,
+      rgba(0, 0, 0, 0.15) 5px
+    );
+  }
+
+  /* ---- Seek bar / Progress bar ---- */
+  .seek-bar {
+    @apply relative w-full cursor-pointer;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .seek-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, hsl(var(--color-primary)), hsl(var(--color-accent)));
+    transition: width 0.1s linear;
+  }
+
+  /* ---- Skeleton loader ---- */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--surface-elevated)) 25%,
+      hsl(var(--surface-overlay)) 50%,
+      hsl(var(--surface-elevated)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* ---- Safe area padding utilities ---- */
+  .pt-safe { padding-top: var(--safe-area-top); }
+  .pb-safe { padding-bottom: var(--safe-area-bottom); }
+  .pb-nav {
+    /* Push content above the bottom nav + mini player + safe area */
+    padding-bottom: calc(
+      var(--bottom-nav-height) +
+      var(--mini-player-height) +
+      var(--safe-area-bottom) +
+      8px
+    );
+  }
+}
+
+@layer utilities {
+  /* Prevent text selection on interactive elements (touch UX) */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* GPU acceleration hint for animating elements */
+  .will-animate {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+}
