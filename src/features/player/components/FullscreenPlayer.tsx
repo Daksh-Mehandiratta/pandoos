@@ -38,17 +38,18 @@ export function FullscreenPlayer() {
       <div className="w-full h-full flex flex-col pb-safe">
         
         {/* Top Header */}
-        <div className="w-full flex items-center justify-between px-6 pt-safe mt-4 pb-2 shrink-0 z-50">
+        <div className="w-full flex items-center justify-between px-6 pt-safe mt-2 pb-2 shrink-0 z-50">
           <button 
             onClick={closePlayer}
-            className="p-3 rounded-full text-white/80 hover:text-white transition-colors touch-highlight"
+            className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all active:scale-95 touch-highlight"
+            aria-label="Close Player"
           >
-            <ChevronDown size={28} />
+            <ChevronDown size={32} />
           </button>
           <span className="text-xs md:text-sm font-bold tracking-[0.2em] text-brand-primary uppercase drop-shadow-lg text-center px-4">
             Now Playing
           </span>
-          <button className="p-3 rounded-full text-white/80 hover:text-white transition-colors touch-highlight">
+          <button className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white transition-all active:scale-95 touch-highlight">
             <MoreVertical size={24} />
           </button>
         </div>

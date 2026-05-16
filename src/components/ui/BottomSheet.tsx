@@ -73,8 +73,8 @@ export function BottomSheet({ isOpen, onClose, children, className, fullScreen =
       {/* Sheet Content */}
       <motion.div
         className={cn(
-          'relative w-full bg-surface-base rounded-t-4xl border-t border-white/10 shadow-glass flex flex-col',
-          fullScreen ? 'h-[95vh]' : 'max-h-[90vh]',
+          'relative w-full bg-surface-base shadow-glass flex flex-col',
+          fullScreen ? 'h-[100dvh] rounded-none border-none' : 'max-h-[90vh] rounded-t-4xl border-t border-white/10',
           className
         )}
         variants={{
@@ -88,12 +88,12 @@ export function BottomSheet({ isOpen, onClose, children, className, fullScreen =
         dragElastic={{ top: 0, bottom: 0.8 }}
         onDragEnd={handleDragEnd}
       >
-        {/* Drag Handle Area (the only part that initiates dragging to prevent scrolling conflicts) */}
+        {/* Drag Handle Area */}
         <div
-          className="w-full pt-4 pb-2 cursor-grab active:cursor-grabbing touch-none flex justify-center"
+          className="w-full pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none flex justify-center"
           onPointerDown={(e) => dragControls.start(e)}
         >
-          <div className="w-12 h-1.5 rounded-full bg-white/20" />
+          {!fullScreen && <div className="w-12 h-1.5 rounded-full bg-white/20" />}
         </div>
 
         {/* Scrollable Content inside the sheet */}
