@@ -35,17 +35,20 @@ export function FullscreenPlayer() {
       fullScreen 
       className="bg-black border-none shadow-none"
     >
-      {/* Base solid background */}
-      <div className="absolute inset-0 bg-[#0a0a0a] -z-20" />
+      {/* Base solid background fallback */}
+      <div className="absolute inset-0 bg-[#111] -z-20" />
 
-      {/* Base Mood Color (Driven by Color Extractor) - Massively increased opacity */}
-      <div className="absolute inset-0 bg-brand-primary opacity-60 transition-colors duration-1000 ease-in-out -z-10" />
-      
-      {/* Very soft dark gradient just to ensure text readability at the bottom */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/90 -z-10 pointer-events-none" />
+      {/* Base Mood Color (Driven by Color Extractor) - NO black overlays */}
+      <div 
+        className="absolute inset-0 transition-colors duration-1000 ease-in-out -z-10" 
+        style={{ backgroundColor: 'hsl(var(--color-primary))' }}
+      />
       
       {/* Top light bloom for extra pop */}
-      <div className="absolute top-0 inset-x-0 h-[60vh] bg-brand-primary opacity-40 blur-[100px] transition-colors duration-1000 ease-in-out -z-10 pointer-events-none mix-blend-screen" />
+      <div 
+        className="absolute top-0 inset-x-0 h-[60vh] blur-[100px] transition-colors duration-1000 ease-in-out -z-10 pointer-events-none mix-blend-screen opacity-50" 
+        style={{ backgroundColor: 'hsl(var(--color-primary))' }}
+      />
 
       {/* Main Content: Flexible vertical stack */}
       <div className="w-full h-full flex flex-col pb-safe">

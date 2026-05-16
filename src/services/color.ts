@@ -7,28 +7,32 @@ interface ExtractedColors {
 
 /** Convert RGB (0-255) to an HSL string "H S% L%" for CSS var injection */
 function rgbToHslString(r: number, g: number, b: number): string {
-  const rN = r / 255, gN = g / 255, bN = b / 255;
-  const max = Math.max(rN, gN, bN);
-  const min = Math.min(rN, gN, bN);
-  const delta = max - min;
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
 
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-
-  if (delta !== 0) {
-    s = delta / (1 - Math.abs(2 * l - 1));
-    if (max === rN) h = ((gN - bN) / delta) % 6;
-    else if (max === gN) h = (bN - rN) / delta + 2;
-    else h = (rN - gN) / delta + 4;
-    h = Math.round(h * 60);
-    if (h < 0) h += 360;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
   }
 
-  // Boost saturation so album-art dark images still produce vivid theme colors
-  const S = Math.min(Math.round(s * 100) + 15, 95);
-  // Keep lightness in a usable range — not too dark, not washed out
-  const L = Math.max(50, Math.min(75, Math.round(l * 100)));
-  return `${h} ${S}% ${L}%`;
+  // Provide fallback defaults using || to catch any NaN results from floating point math
+  const H = Math.round((h || 0) * 360) % 360;
+  // Force a vibrant saturation
+  const S = Math.min(Math.round((s || 0) * 100) + 25, 95);
+  // Strictly clamp lightness to ensure it NEVER goes black or white
+  const L = Math.max(45, Math.min(65, Math.round((l || 0) * 100)));
+  
+  return `${H} ${S}% ${L}%`;
 }
 
 /**
