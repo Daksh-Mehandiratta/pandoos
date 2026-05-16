@@ -6,6 +6,7 @@ import { cn } from '@/utils/cn';
 interface PandaMascotProps {
   className?: string;
   size?: number;
+  emotion?: string;
 }
 
 /**
@@ -13,8 +14,31 @@ interface PandaMascotProps {
  * An inline SVG animated via Framer Motion variants.
  * Reacts dynamically to the audio state via usePandaState hook.
  */
-export function PandaMascot({ className, size = 120 }: PandaMascotProps) {
+export function PandaMascot({ className, size = 120, emotion = 'neutral' }: PandaMascotProps) {
   const state = usePandaState(); // 'idle', 'listening', 'nodding', 'loading'
+
+  const getMouthPath = () => {
+    if (emotion === 'heartbroken' || emotion === 'sad') return "M80 145 Q100 130 120 145"; // Frown
+    if (emotion === 'angry' || emotion === 'workout') return "M85 145 Q100 135 115 145"; // Angry mouth
+    if (emotion === 'energy' || emotion === 'happy' || emotion === 'party' || emotion === 'romantic') return "M80 135 Q100 165 120 135"; // Big smile
+    if (emotion === 'chill' || emotion === 'latenight') return "M85 140 Q100 145 115 140"; // Smirk
+    if (emotion === 'sleepy') return "M90 140 Q100 145 110 140"; // Relaxed tiny mouth
+    if (state === 'listening' || state === 'nodding') return "M100 135 Q85 155 75 140 M100 135 Q115 155 125 140";
+    return "M100 135 Q90 150 80 145 M100 135 Q110 150 120 145";
+  };
+
+  const showGlasses = () => {
+    // Never show glasses for these highly expressive emotions where eyes matter
+    if (['sad', 'heartbroken', 'romantic', 'sleepy', 'angry', 'workout'].includes(emotion)) {
+      return false;
+    }
+    // Always show glasses for cool/chill moods
+    if (['chill', 'latenight', 'focus'].includes(emotion)) {
+      return true;
+    }
+    // For happy, energy, or neutral, put glasses on only when vibing to music
+    return state === 'nodding';
+  };
 
   return (
     <div 
@@ -34,13 +58,13 @@ export function PandaMascot({ className, size = 120 }: PandaMascotProps) {
         {/* Ears */}
         <motion.circle 
           cx="45" cy="55" r="22" 
-          fill="#111" 
+          fill="#111" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"
           animate={state === 'nodding' ? { y: [0, 2, 0] } : { y: 0 }}
           transition={{ repeat: Infinity, duration: 0.5 }}
         />
         <motion.circle 
           cx="155" cy="55" r="22" 
-          fill="#111" 
+          fill="#111" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"
           animate={state === 'nodding' ? { y: [0, 2, 0] } : { y: 0 }}
           transition={{ repeat: Infinity, duration: 0.5 }}
         />
@@ -54,36 +78,86 @@ export function PandaMascot({ className, size = 120 }: PandaMascotProps) {
 
         {/* ---- Eyes / Glasses ---- */}
         {/* Left Eye Patch */}
-        <path d="M45 80 C55 65 85 75 80 105 C75 135 40 120 45 80 Z" fill="#111" />
+        <path d="M45 80 C55 65 85 75 80 105 C75 135 40 120 45 80 Z" fill="#111" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
         {/* Right Eye Patch */}
-        <path d="M155 80 C145 65 115 75 120 105 C125 135 160 120 155 80 Z" fill="#111" />
+        <path d="M155 80 C145 65 115 75 120 105 C125 135 160 120 155 80 Z" fill="#111" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
 
-        {/* The Pupils */}
-        <motion.g
-          animate={
-            state === 'loading' ? { scale: [1, 1.2, 1], opacity: [1, 0.5, 1] } :
-            state === 'idle' ? { scaleY: [1, 0.1, 1] } : // Blinking
-            { scaleY: 1 }
-          }
-          transition={
-            state === 'loading' ? { repeat: Infinity, duration: 1 } :
-            state === 'idle' ? { repeat: Infinity, repeatDelay: 4, duration: 0.2 } :
-            {}
-          }
-        >
-          {/* Left Pupil */}
-          <circle cx="65" cy="95" r="6" fill="#FFF" />
-          <circle cx="68" cy="92" r="2" fill="#FFF" opacity="0.8" />
-          {/* Right Pupil */}
-          <circle cx="135" cy="95" r="6" fill="#FFF" />
-          <circle cx="132" cy="92" r="2" fill="#FFF" opacity="0.8" />
-        </motion.g>
+        {/* The Pupils (Hide if sleepy) */}
+        {emotion !== 'sleepy' && emotion !== 'romantic' && (
+          <motion.g
+            animate={
+              state === 'loading' ? { scale: [1, 1.2, 1], opacity: [1, 0.5, 1] } :
+              (emotion === 'chill' || emotion === 'latenight') ? { scaleY: 0.5 } : // Half closed eyes
+              (emotion === 'angry' || emotion === 'workout') ? { scaleY: 0.8, scaleX: 1.1 } : // Intense
+              state === 'idle' ? { scaleY: [1, 0.1, 1] } : // Blinking
+              { scaleY: 1 }
+            }
+            transition={
+              state === 'loading' ? { repeat: Infinity, duration: 1 } :
+              state === 'idle' ? { repeat: Infinity, repeatDelay: 4, duration: 0.2 } :
+              {}
+            }
+          >
+            {/* Left Pupil */}
+            <circle cx="65" cy="95" r="6" fill="#FFF" />
+            <circle cx="68" cy="92" r="2" fill="#FFF" opacity="0.8" />
+            {/* Right Pupil */}
+            <circle cx="135" cy="95" r="6" fill="#FFF" />
+            <circle cx="132" cy="92" r="2" fill="#FFF" opacity="0.8" />
+          </motion.g>
+        )}
 
-        {/* Sunglasses (Visible only when nodding/playing) */}
+        {/* Romantic Heart Eyes */}
+        {emotion === 'romantic' && (
+          <motion.g fill="#ef4444" animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}>
+            <path d="M65 105 Q 50 85 65 75 Q 80 85 65 105" />
+            <path d="M135 105 Q 120 85 135 75 Q 150 85 135 105" />
+          </motion.g>
+        )}
+
+        {/* Sleepy Eyes (Closed) */}
+        {emotion === 'sleepy' && (
+          <g stroke="#fff" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.6">
+            <path d="M55 95 Q 65 105 75 95" />
+            <path d="M125 95 Q 135 105 145 95" />
+          </g>
+        )}
+
+        {/* Angry Eyebrows */}
+        {(emotion === 'angry' || emotion === 'workout') && (
+          <motion.g stroke="#111" strokeWidth="5" strokeLinecap="round">
+            <path d="M40 70 L75 85" />
+            <path d="M160 70 L125 85" />
+          </motion.g>
+        )}
+
+        {/* Sad Tear Drop */}
+        {(emotion === 'heartbroken' || emotion === 'sad') && (
+          <motion.path
+            d="M 65 105 Q 60 115 65 120 Q 70 115 65 105"
+            fill="#3b82f6"
+            initial={{ y: 0, opacity: 0 }}
+            animate={{ y: [0, 10, 20], opacity: [0, 1, 0] }}
+            transition={{ repeat: Infinity, duration: 1.5, ease: "easeIn" }}
+          />
+        )}
+
+        {/* Sleepy Zzz */}
+        {emotion === 'sleepy' && (
+          <motion.text 
+            x="145" y="30" fill="#fff" fontSize="24" fontFamily="monospace" fontWeight="bold" opacity="0.7"
+            animate={{ y: [0, -15, -30], opacity: [0, 0.7, 0], x: [0, 5, -5] }}
+            transition={{ repeat: Infinity, duration: 3, ease: "easeOut" }}
+          >
+            Z
+          </motion.text>
+        )}
+
+        {/* Sunglasses */}
         <motion.g
           initial={{ y: -50, opacity: 0 }}
           animate={
-            state === 'nodding' ? { y: 0, opacity: 1 } :
+            showGlasses() ? { y: 0, opacity: 1 } :
             { y: -20, opacity: 0 }
           }
           transition={{ type: 'spring', damping: 15 }}
@@ -98,9 +172,10 @@ export function PandaMascot({ className, size = 120 }: PandaMascotProps) {
         {/* ---- Nose & Mouth ---- */}
         <path d="M90 125 Q100 120 110 125 Q105 135 100 135 Q95 135 90 125 Z" fill="#222" />
         <motion.path 
-          d="M100 135 Q90 150 80 145 M100 135 Q110 150 120 145" 
-          stroke="#222" strokeWidth="3" strokeLinecap="round" fill="none"
-          animate={state === 'listening' || state === 'nodding' ? { d: "M100 135 Q85 155 75 140 M100 135 Q115 155 125 140" } : { d: "M100 135 Q90 150 80 145 M100 135 Q110 150 120 145" }}
+          d={getMouthPath()} 
+          stroke="#222" strokeWidth="3" strokeLinecap="round" fill={(emotion === 'energy' || emotion === 'happy' || emotion === 'party' || emotion === 'romantic') ? '#ff7b72' : 'none'}
+          animate={{ d: getMouthPath() }}
+          transition={{ duration: 0.3 }}
         />
 
         {/* Gradients */}
