@@ -54,7 +54,11 @@ async function sampleImageColors(
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve([]); return; }
 
-      ctx.drawImage(img, 0, 0, SIZE, SIZE);
+      // Crop top and bottom 15% to avoid YouTube's black bars on hqdefault
+      const sy = img.height * 0.15;
+      const sHeight = img.height * 0.7;
+      
+      ctx.drawImage(img, 0, sy, img.width, sHeight, 0, 0, SIZE, SIZE);
       const { data } = ctx.getImageData(0, 0, SIZE, SIZE);
 
       const pixels: Array<[number, number, number]> = [];
@@ -65,10 +69,16 @@ async function sampleImageColors(
         const g = data[i + 1] ?? 0;
         const b = data[i + 2] ?? 0;
         const a = data[i + 3] ?? 0;
-        // Skip near-transparent, near-black, and near-white pixels
+        // Skip transparent and low-saturation/dark pixels (black bars with JPEG noise)
         if (a < 128) continue;
         const brightness = (r + g + b) / 3;
-        if (brightness < 20 || brightness > 240) continue;
+        if (brightness < 40 || brightness > 230) continue; // Skip darks and pure whites
+        
+        // Skip grey pixels (low saturation)
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        if (max - min < 20) continue; 
+        
         pixels.push([r, g, b]);
       }
       resolve(pixels);

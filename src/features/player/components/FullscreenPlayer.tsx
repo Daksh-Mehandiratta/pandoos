@@ -35,14 +35,17 @@ export function FullscreenPlayer() {
       fullScreen 
       className="bg-black border-none shadow-none"
     >
-      {/* Base solid background to prevent ANY bleed-through from Home Page */}
-      <div className="absolute inset-0 bg-black -z-20" />
+      {/* Base solid background */}
+      <div className="absolute inset-0 bg-[#050505] -z-20" />
+
+      {/* Base Mood Color (Driven by Color Extractor) */}
+      <div className="absolute inset-0 bg-brand-primary opacity-40 transition-colors duration-1000 ease-in-out -z-10" />
       
-      {/* Dynamic mood gradient background (Performant, no blur needed) */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--color-primary)/0.6)] via-[hsl(var(--surface-base))] to-black -z-10 transition-colors duration-1000" />
+      {/* Dark Gradient Overlay for Glassmorphic Depth - only dark at the very bottom */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/40 to-[#050505] -z-10 pointer-events-none" />
       
-      {/* Extra dark gradient overlay at bottom to ensure text and controls perfectly pop out */}
-      <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none -z-10" />
+      {/* Top light bloom for extra pop */}
+      <div className="absolute top-0 inset-x-0 h-[50vh] bg-brand-primary opacity-30 blur-[80px] transition-colors duration-1000 ease-in-out -z-10 pointer-events-none mix-blend-screen" />
 
       {/* Main Content: Flexible vertical stack */}
       <div className="w-full h-full flex flex-col pb-safe">

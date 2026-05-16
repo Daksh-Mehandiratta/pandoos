@@ -56,27 +56,22 @@ export function SeekBar({ className }: { className?: string }) {
       {/* The Bar */}
       <div 
         ref={containerRef}
-        className="seek-bar h-8 flex items-center group touch-none relative"
+        className="seek-bar h-8 flex items-center group touch-none relative cursor-pointer"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Track background (Bamboo Stick Base) */}
-        <div className="w-full h-2.5 bg-green-950/40 rounded-full relative overflow-hidden shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] border border-green-900/30">
-          
-          {/* Bamboo segments (notches) */}
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div 
-              key={`notch-${i}`} 
-              className="absolute top-0 bottom-0 w-[2px] bg-green-900/40"
-              style={{ left: `${(i + 1) * 12.5}%` }}
-            />
-          ))}
-
-          {/* Fill progress (Glowing Emerald) */}
+        {/* Base Track (Blank Grey Line) */}
+        <div 
+          className={cn(
+            "w-full bg-white/20 rounded-full relative overflow-hidden transition-all duration-300 ease-out",
+            isDragging ? "h-2.5" : "h-1.5 group-hover:h-2"
+          )}
+        >
+          {/* Played Portion (The Bamboo Growing) */}
           <div 
-            className="seek-bar-fill h-full bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-400"
+            className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-400 rounded-full"
             style={{ 
               width: `${displayProgress * 100}%`,
               transition: isDragging ? 'none' : 'width 0.1s linear',
@@ -85,12 +80,11 @@ export function SeekBar({ className }: { className?: string }) {
           />
         </div>
         
-        {/* Playhead thumb (Panda or Leaf) */}
+        {/* Playhead thumb (The Panda) */}
         <div 
           className={cn(
-            "absolute top-1/2 -translate-y-1/2 -ml-3 flex items-center justify-center text-xl transition-transform drop-shadow-[0_2px_8px_rgba(16,185,129,0.5)]",
-            "scale-100 md:scale-0 group-hover:scale-100 focus:scale-100",
-            isDragging ? "scale-125" : ""
+            "absolute top-1/2 -translate-y-1/2 -ml-3 flex items-center justify-center text-xl transition-transform drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] z-10",
+            isDragging ? "scale-125" : "scale-100"
           )}
           style={{ left: `${displayProgress * 100}%` }}
         >

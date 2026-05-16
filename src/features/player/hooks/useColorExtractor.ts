@@ -30,8 +30,9 @@ export function useColorExtractor() {
     async function runExtraction() {
       setIsExtracting(true);
       try {
-        // Prefer maxres for better color extraction if available
-        const imageUrl = getBestThumbnail(currentTrack!.videoId);
+        // Use HQ thumbnail because maxresdefault can return a grey 404 image 
+        // that successfully loads but turns the theme completely black!
+        const imageUrl = `https://i.ytimg.com/vi/${currentTrack!.videoId}/hqdefault.jpg`;
         
         // Due to CORS, we need the image to be served with proper headers.
         // YouTube's i.ytimg.com supports CORS.
