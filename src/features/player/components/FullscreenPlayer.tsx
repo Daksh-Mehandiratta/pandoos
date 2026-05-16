@@ -41,14 +41,14 @@ export function FullscreenPlayer() {
         <div className="w-full flex items-center justify-between px-6 pt-safe mt-4 pb-2 shrink-0 z-50">
           <button 
             onClick={closePlayer}
-            className="p-3 bg-white/5 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors backdrop-blur-md border border-white/10 touch-highlight"
+            className="p-3 rounded-full text-white/80 hover:text-white transition-colors touch-highlight"
           >
             <ChevronDown size={28} />
           </button>
           <span className="text-xs md:text-sm font-bold tracking-[0.2em] text-brand-primary uppercase drop-shadow-lg text-center px-4">
             Now Playing
           </span>
-          <button className="p-3 bg-white/5 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors backdrop-blur-md border border-white/10 touch-highlight">
+          <button className="p-3 rounded-full text-white/80 hover:text-white transition-colors touch-highlight">
             <MoreVertical size={24} />
           </button>
         </div>
