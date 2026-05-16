@@ -34,6 +34,9 @@ export async function searchTracks(query: string): Promise<Track[]> {
     'sleep ambient delta waves': 'sleepy',
     'late night drive synthwave retro': 'latenight',
     'happy feel good uplifting pop': 'happy',
+    'bollywood pop romantic hits': 'bollywood',
+    'desi hip hop punjabi swag': 'desi',
+    'sufi ghazal peaceful lo-fi': 'sufi',
   };
 
   const moodId = MOOD_QUERIES[query.toLowerCase().trim()];

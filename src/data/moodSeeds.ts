@@ -42,5 +42,17 @@ export const MOOD_SEEDS: Record<string, Track[]> = {
   happy: [
     { ...BASE_TRACK, id: 'ZbZSe6N_BXs', videoId: 'ZbZSe6N_BXs', title: 'Pharrell Williams - Happy', artist: 'Pharrell Williams', albumArt: 'https://img.youtube.com/vi/ZbZSe6N_BXs/maxresdefault.jpg' },
     { ...BASE_TRACK, id: 'ru0K8uYEZWw', videoId: 'ru0K8uYEZWw', title: 'Justin Timberlake - CAN\'T STOP THE FEELING!', artist: 'Justin Timberlake', albumArt: 'https://img.youtube.com/vi/ru0K8uYEZWw/maxresdefault.jpg' },
+  ],
+  bollywood: [
+    { ...BASE_TRACK, id: 'BddP6PYo2gs', videoId: 'BddP6PYo2gs', title: 'Kesariya - Brahmāstra | Ranbir Kapoor | Alia Bhatt', artist: 'Pritam, Arijit Singh', albumArt: 'https://img.youtube.com/vi/BddP6PYo2gs/maxresdefault.jpg' },
+    { ...BASE_TRACK, id: 'Umqb9KENgmk', videoId: 'Umqb9KENgmk', title: 'Tum Hi Ho (Aashiqui 2)', artist: 'Arijit Singh', albumArt: 'https://img.youtube.com/vi/Umqb9KENgmk/maxresdefault.jpg' },
+  ],
+  desi: [
+    { ...BASE_TRACK, id: 'VNs_cCtdbPc', videoId: 'VNs_cCtdbPc', title: 'Brown Munde - AP Dhillon', artist: 'AP Dhillon', albumArt: 'https://img.youtube.com/vi/VNs_cCtdbPc/maxresdefault.jpg' },
+    { ...BASE_TRACK, id: '5Eqb_-j3FDA', videoId: '5Eqb_-j3FDA', title: '295 - Sidhu Moose Wala', artist: 'Sidhu Moose Wala', albumArt: 'https://img.youtube.com/vi/5Eqb_-j3FDA/maxresdefault.jpg' },
+  ],
+  sufi: [
+    { ...BASE_TRACK, id: 'T94PHkuydcw', videoId: 'T94PHkuydcw', title: 'Kun Faya Kun', artist: 'A.R. Rahman', albumArt: 'https://img.youtube.com/vi/T94PHkuydcw/maxresdefault.jpg' },
+    { ...BASE_TRACK, id: 'y1tXhmwGuAg', videoId: 'y1tXhmwGuAg', title: 'Tajdar-e-Haram', artist: 'Atif Aslam', albumArt: 'https://img.youtube.com/vi/y1tXhmwGuAg/maxresdefault.jpg' },
   ]
 };
