@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const inputImagePath = path.join(__dirname, '../public/panda_favicon.png');
+const inputImagePath = path.join(__dirname, '../public/logo.png');
 const outputDir = path.join(__dirname, '../public/icons');
 
 // Ensure output directory exists

@@ -32,7 +32,7 @@ export function Sidebar() {
 
       {/* Brand */}
       <div className="px-6 mb-8 flex items-center gap-3">
-        <img src="/panda_favicon.png" alt="Pandoos" className="w-9 h-9 object-contain" />
+        <img src="/logo.png" alt="Pandoos" className="w-9 h-9 object-contain" />
         <h1 className="text-xl font-display font-bold text-white tracking-tight">Pandoos</h1>
       </div>
 
