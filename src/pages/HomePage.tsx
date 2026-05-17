@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Sparkles, TrendingUp, Music, Clock, Zap, Brain, Dumbbell, Moon, Compass, Heart, Radio, Flame } from 'lucide-react';
@@ -11,7 +11,12 @@ import { useTasteStore } from '@/stores/useTasteStore';
 import { getBestThumbnail, searchTracks } from '@/services/youtube';
 import { MOOD_SEEDS } from '@/data/moodSeeds';
 import { buildSearchQuery } from '@/services/recommendEngine';
+import { getPersonalizedTracklist, getExpandedTracklist } from '@/services/trackExpansion';
+import { TrackImage } from '@/components/shared/TrackImage';
 import type { Track } from '@/types/track';
+
+// Stable session seed so shuffles are consistent until page refresh
+const SESSION_SEED = Date.now();
 
 const MOODS = [
   { id: 'bollywood',   label: 'Bollywood 💫', query: 'bollywood pop romantic hits' },
@@ -59,10 +64,10 @@ export function HomePage() {
 
   const isPersonalized = topGenres.length > 0 || recentArtists.length > 0;
 
-  // Quick picks from history or seeds
+  // Quick picks from history or taste-expanded seeds
   const quickPicks = useMemo(() => {
-    if (history.length >= 4) return history.slice(0, 8);
-    return Object.values(MOOD_SEEDS).flat().sort(() => 0.5 - Math.random()).slice(0, 8);
+    if (history.length >= 4) return history.slice(0, 12);
+    return getExpandedTracklist('bollywood', SESSION_SEED).slice(0, 12);
   }, [history]);
 
   // "For You" — seeded from top genre
@@ -261,6 +266,7 @@ export function HomePage() {
           onPlay={handlePlayTrack}
           lovedIds={lovedIds}
           highlight={!isPersonalized}
+          expandMoodId={selectedMood.id}
         />
 
         {/* MEMORY LANE — history */}
@@ -303,6 +309,7 @@ export function HomePage() {
           isLoading={isBollyLoading}
           onPlay={handlePlayTrack}
           lovedIds={lovedIds}
+          expandMoodId="bollywood"
         />
 
         {/* DESI GULLY */}
@@ -316,6 +323,7 @@ export function HomePage() {
           isLoading={isDesiLoading}
           onPlay={handlePlayTrack}
           lovedIds={lovedIds}
+          expandMoodId="desi"
         />
 
         {/* SUFI DARBAR */}
@@ -329,6 +337,7 @@ export function HomePage() {
           isLoading={isSufiLoading}
           onPlay={handlePlayTrack}
           lovedIds={lovedIds}
+          expandMoodId="sufi"
         />
 
         {/* CHILL BAMBOO */}
@@ -342,6 +351,7 @@ export function HomePage() {
           isLoading={isChillLoading}
           onPlay={handlePlayTrack}
           lovedIds={lovedIds}
+          expandMoodId="chill"
         />
 
         {/* NEON CITY NIGHTS */}
@@ -355,6 +365,7 @@ export function HomePage() {
           isLoading={isLateLoading}
           onPlay={handlePlayTrack}
           lovedIds={lovedIds}
+          expandMoodId="latenight"
         />
 
         {/* IRON DOJO */}
@@ -368,6 +379,7 @@ export function HomePage() {
           isLoading={isWorkoutLoading}
           onPlay={handlePlayTrack}
           lovedIds={lovedIds}
+          expandMoodId="workout"
         />
 
         {/* GLOBAL TRENDING */}
@@ -422,9 +434,10 @@ interface RealmSectionProps {
   lovedIds?: string[];
   badge?: string;
   highlight?: boolean;
+  expandMoodId?: string;
 }
 
-function RealmSection({ title, description, gradient, emotion, icon: Icon, tracks, isLoading, onPlay, lovedIds = [], badge, highlight }: RealmSectionProps) {
+function RealmSection({ title, description, gradient, emotion, icon: Icon, tracks, isLoading, onPlay, lovedIds = [], badge, highlight, expandMoodId }: RealmSectionProps) {
   if (!isLoading && (!tracks || tracks.length === 0)) return null;
 
   return (
@@ -460,73 +473,113 @@ function RealmSection({ title, description, gradient, emotion, icon: Icon, track
 
         {/* Track list */}
         <div className="flex-1 w-full min-w-0">
-          <TrackList tracks={tracks} isLoading={isLoading} onPlay={onPlay} highlight={highlight} lovedIds={lovedIds} />
+          <TrackList tracks={tracks} isLoading={isLoading} onPlay={onPlay} highlight={highlight} lovedIds={lovedIds} expandMoodId={expandMoodId} />
         </div>
       </div>
     </section>
   );
 }
 
-function TrackList({ tracks, isLoading, onPlay, highlight, lovedIds = [] }: {
+function TrackList({ tracks, isLoading, onPlay, highlight, lovedIds = [], expandMoodId }: {
   tracks?: Track[];
   isLoading: boolean;
   onPlay: (t: Track, list: Track[]) => void;
   highlight?: boolean;
   lovedIds?: string[];
+  expandMoodId?: string; // if set, enables infinite scroll from expansion engine
 }) {
+  const PAGE_SIZE = 12;
+  const [page, setPage] = React.useState(1);
+
+  // Full track pool: API results merged with expanded seeds (deduped)
+  const fullPool = React.useMemo(() => {
+    const base = tracks ?? [];
+    if (!expandMoodId) return base;
+    const expanded = getExpandedTracklist(expandMoodId, SESSION_SEED);
+    const seen = new Set(base.map(t => t.videoId));
+    const extra = expanded.filter(t => !seen.has(t.videoId));
+    return [...base, ...extra];
+  }, [tracks, expandMoodId]);
+
+  const visible = fullPool.slice(0, page * PAGE_SIZE);
+  const hasMore = visible.length < fullPool.length;
+
+  // Reset page when tracks change (mood switch)
+  React.useEffect(() => { setPage(1); }, [expandMoodId, tracks]);
+
   return (
-    <div className="flex overflow-x-auto gap-4 md:gap-5 pb-6 snap-x snap-mandatory scroll-container px-1 -mx-1">
-      {isLoading
-        ? [...Array(6)].map((_, i) => (
-            <div key={i} className={`shrink-0 snap-start rounded-2xl skeleton ${highlight ? 'w-[200px] h-[280px]' : 'w-[150px] h-[150px]'}`} />
-          ))
-        : (
-          <AnimatePresence mode="popLayout">
-            {tracks?.map((track, i) => (
-              <motion.div
-                key={track.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className={`shrink-0 snap-start group cursor-pointer ${highlight ? 'w-[200px] md:w-[220px]' : 'w-[150px] md:w-[170px]'}`}
-                onClick={() => onPlay(track, tracks ?? [])}
-              >
-                {/* Thumbnail */}
-                <div className={`relative w-full rounded-2xl overflow-hidden mb-3 shadow-lg border border-white/10 transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] ${highlight ? 'aspect-[4/5]' : 'aspect-square'}`}>
-                  <img
-                    src={getBestThumbnail(track.videoId)}
-                    alt={track.title}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <div className="w-full">
+      <div className="flex overflow-x-auto gap-4 md:gap-5 pb-4 snap-x snap-mandatory scroll-container px-1 -mx-1">
+        {isLoading
+          ? [...Array(6)].map((_, i) => (
+              <div key={i} className={`shrink-0 snap-start rounded-2xl animate-pulse bg-white/5 border border-white/5 ${highlight ? 'w-[200px] h-[280px]' : 'w-[150px] h-[150px]'}`}>
+                <div className="w-full h-full flex items-center justify-center">
+                  <Music size={28} className="text-white/10" />
+                </div>
+              </div>
+            ))
+          : (
+            <AnimatePresence mode="popLayout">
+              {visible.map((track, i) => (
+                <motion.div
+                  key={track.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: Math.min(i, 8) * 0.04 }}
+                  className={`shrink-0 snap-start group cursor-pointer ${highlight ? 'w-[200px] md:w-[220px]' : 'w-[150px] md:w-[170px]'}`}
+                  onClick={() => onPlay(track, fullPool)}
+                >
+                  {/* Thumbnail — uses TrackImage for guaranteed no grey box */}
+                  <div className={`relative w-full rounded-2xl overflow-hidden mb-3 shadow-lg border border-white/10 transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] ${highlight ? 'aspect-[4/5]' : 'aspect-square'}`}>
+                    <TrackImage
+                      videoId={track.videoId}
+                      title={track.title}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  {/* Loved badge */}
-                  {lovedIds.includes(track.videoId) && (
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center">
-                      <Heart size={12} fill="white" className="text-white" />
-                    </div>
-                  )}
+                    {/* Loved badge */}
+                    {lovedIds.includes(track.videoId) && (
+                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center">
+                        <Heart size={12} fill="white" className="text-white" />
+                      </div>
+                    )}
 
-                  {/* Play button */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xl scale-75 group-hover:scale-100 transition-transform duration-300">
-                      <Play fill="black" size={20} className="ml-1 text-black" />
+                    {/* Play button */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xl scale-75 group-hover:scale-100 transition-transform duration-300">
+                        <Play fill="black" size={20} className="ml-1 text-black" />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Text */}
-                <h3 className="text-sm font-bold text-white leading-tight line-clamp-2 mb-1 group-hover:text-brand-primary transition-colors">
-                  {track.title}
-                </h3>
-                <p className="text-xs text-white/50 line-clamp-1 font-medium">
-                  {track.artist}
-                </p>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                  {/* Text */}
+                  <h3 className="text-sm font-bold text-white leading-tight line-clamp-2 mb-1 group-hover:text-brand-primary transition-colors">
+                    {track.title}
+                  </h3>
+                  <p className="text-xs text-white/50 line-clamp-1 font-medium">
+                    {track.artist}
+                  </p>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+
+        {/* Inline Load More card */}
+        {!isLoading && hasMore && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`shrink-0 snap-start flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-all group ${highlight ? 'w-[200px] md:w-[220px] aspect-[4/5]' : 'w-[150px] md:w-[170px] aspect-square'}`}
+            onClick={() => setPage(p => p + 1)}
+          >
+            <div className="w-10 h-10 rounded-full bg-brand-primary/20 border border-brand-primary/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <span className="text-brand-primary font-bold text-xl">+</span>
+            </div>
+            <span className="text-xs text-white/50 font-semibold text-center px-2">More songs</span>
+          </motion.div>
         )}
+      </div>
     </div>
   );
 }
