@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { DesktopLayout } from '@/components/layout/DesktopLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -7,15 +7,15 @@ import { useAudioEngine } from '@/features/player/hooks/useAudioEngine';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { useRecommendEngine } from '@/hooks/useRecommendEngine';
 import { BadgeRevealModal } from '@/features/profile/BadgeRevealModal';
-
-import { HomePage } from '@/pages/HomePage';
-import { SearchPage } from '@/pages/SearchPage';
-import { LibraryPage } from '@/pages/LibraryPage';
-import { ProfilePage } from '@/pages/ProfilePage';
-import { LoginPage } from '@/pages/LoginPage';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
+
+const HomePage = React.lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
+const SearchPage = React.lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage })));
+const LibraryPage = React.lazy(() => import('@/pages/LibraryPage').then(m => ({ default: m.LibraryPage })));
+const ProfilePage = React.lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const LoginPage = React.lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
 
 export function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
@@ -66,17 +66,24 @@ export function App() {
 
   return (
     <>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route element={isMobile ? <MobileLayout /> : <DesktopLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/library" element={<LibraryPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+      <Suspense fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-surface-base flex-col gap-4">
+          <img src="/panda_favicon.png" alt="Pandoos" className="w-16 h-16 object-contain animate-pulse" />
+          <div className="w-8 h-8 rounded-full border-2 border-brand-primary border-t-transparent animate-spin" />
+        </div>
+      }>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={isMobile ? <MobileLayout /> : <DesktopLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </Suspense>
 
       <OfflineIndicator />
       {/* Global Badge Reveal Modal — renders on top of everything */}

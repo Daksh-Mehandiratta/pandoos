@@ -63,6 +63,7 @@ export function LibraryPage() {
         <h1 className="text-2xl font-bold text-white font-display">Library</h1>
         <button 
           onClick={() => setIsCreating(!isCreating)}
+          aria-label="Create new playlist"
           className="p-2 bg-surface-elevated rounded-full text-text-muted hover:text-white touch-highlight border border-white/5"
         >
           <Plus size={20} />

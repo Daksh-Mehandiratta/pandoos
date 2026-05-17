@@ -44,7 +44,28 @@
     <script src="https://www.youtube.com/iframe_api" async></script>
   </head>
   <body class="overflow-hidden">
-    <div id="root"></div>
+    <div id="root">
+      <style>
+        #preloader {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          width: 100vw;
+          background-color: #050505;
+          gap: 1rem;
+        }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      </style>
+      <div id="preloader">
+        <img src="/panda_favicon.png" alt="Pandoos" style="width: 64px; height: 64px; object-fit: contain;" class="pulse" />
+        <div style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #a855f7; border-top-color: transparent;" class="spin"></div>
+      </div>
+    </div>
     <!-- Hidden YouTube player container: positioned offscreen.
          Capacitor's WebView will play audio from this even when the visual
          player UI is hidden behind other sheets. -->

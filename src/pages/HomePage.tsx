@@ -204,6 +204,7 @@ export function HomePage() {
           />
           <button
             type="submit"
+            aria-label="Search with AI"
             className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-brand-primary text-white rounded-full flex items-center justify-center transition-transform shadow-glow-sm hover:scale-110 active:scale-95"
           >
             <Sparkles size={16} fill="currentColor" />
