@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Plus, Heart, Music2, LogIn } from 'lucide-react';
 import { usePlaylists, useLikedSongs, useCreatePlaylist } from '@/features/library/hooks/useLibrary';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -19,6 +20,9 @@ export function LibraryPage() {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 text-center pb-20">
+        <Helmet>
+          <title>Library | Pandoos</title>
+        </Helmet>
         <div className="w-20 h-20 bg-surface-elevated rounded-full flex items-center justify-center mb-6 shadow-glass">
           <Music2 size={36} className="text-brand-primary" />
         </div>
@@ -51,6 +55,10 @@ export function LibraryPage() {
 
   return (
     <div className="w-full px-4 pb-20">
+      <Helmet>
+        <title>Your Library | Pandoos</title>
+        <meta name="description" content="Your saved playlists and liked songs on Pandoos." />
+      </Helmet>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white font-display">Library</h1>
         <button 

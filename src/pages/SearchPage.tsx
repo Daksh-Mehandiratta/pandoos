@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Search as SearchIcon, X } from 'lucide-react';
 import { useSearch } from '@/features/search/hooks/useSearch';
 import { usePlayerStore } from '@/stores/usePlayerStore';
@@ -21,6 +22,10 @@ export function SearchPage() {
 
   return (
     <div className="w-full h-full flex flex-col px-4">
+      <Helmet>
+        <title>Search | Pandoos</title>
+        <meta name="description" content="Search for your favorite songs, artists, and playlists on Pandoos." />
+      </Helmet>
       {/* Sticky Search Bar */}
       <div className="sticky top-0 z-10 pt-2 pb-4 bg-surface-base/95 backdrop-blur-md">
         <div className="relative w-full">

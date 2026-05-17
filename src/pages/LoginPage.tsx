@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { PandaMascot } from '@/features/panda/components/PandaMascot';
@@ -46,6 +47,10 @@ export function LoginPage() {
 
   return (
     <div className="relative w-full h-screen flex flex-col items-center justify-center overflow-hidden bg-[#050505]">
+      <Helmet>
+        <title>Login | Pandoos</title>
+        <meta name="description" content="Sign in to Pandoos to experience a visually stunning, mood-adaptive music streaming app." />
+      </Helmet>
       {/* Mesmerizing Background Aurora (Hardware Accelerated) */}
       <div className="absolute inset-0 mood-bg pointer-events-none z-0 opacity-80" style={{ willChange: 'transform, opacity' }} />
       

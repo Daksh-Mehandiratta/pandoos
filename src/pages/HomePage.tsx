@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Sparkles, TrendingUp, Music, Clock, Zap, Brain, Dumbbell, Moon, Compass, Heart, Radio, Flame } from 'lucide-react';
 import { PandaMascot } from '@/features/panda/components/PandaMascot';
@@ -138,6 +139,10 @@ export function HomePage() {
 
   return (
     <div className="w-full min-h-full pb-32 flex flex-col items-center overflow-x-hidden">
+      <Helmet>
+        <title>Pandoos | Where Pandas Vibe</title>
+        <meta name="description" content="Discover new music, curated for your mood and taste. Explore Bollywood, Desi, Lofi, and more." />
+      </Helmet>
 
       {/* ── HEADER ── */}
       <header className="w-full max-w-7xl px-4 md:px-8 pt-10 flex items-center justify-between mb-6 z-20">

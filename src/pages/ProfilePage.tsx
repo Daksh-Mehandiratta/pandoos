@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Clock, Zap, Music, TrendingUp, ChevronRight, Heart, X, Share2, Check } from 'lucide-react';
@@ -228,6 +229,9 @@ export function ProfilePage() {
   if (!user) {
     return (
       <div className="w-full min-h-full flex flex-col items-center justify-center px-6 pb-24 gap-8">
+        <Helmet>
+          <title>Profile | Pandoos</title>
+        </Helmet>
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="w-20 h-20 rounded-3xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-4xl">🐾</div>
           <div>
@@ -245,6 +249,10 @@ export function ProfilePage() {
 
   return (
     <div className="w-full min-h-full pb-32 scroll-container">
+      <Helmet>
+        <title>{user.username}'s Profile | Pandoos</title>
+        <meta name="description" content={`View ${user.username}'s profile, badges, and listening history on Pandoos.`} />
+      </Helmet>
 
       {/* Badge Detail Modal */}
       <AnimatePresence>
