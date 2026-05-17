@@ -32,8 +32,8 @@ export function Sidebar() {
 
       {/* Brand */}
       <div className="px-6 mb-8 flex items-center gap-3">
-        <img src="/logo.png" alt="Pandoos" className="w-14 h-14 object-contain" />
-        <h1 className="text-xl font-display font-bold text-white tracking-tight">Pandoos</h1>
+        <img src="/logo.png" alt="Pandoos" className="w-12 h-12 object-contain drop-shadow-xl" />
+        <h1 className="text-2xl font-display font-bold text-white tracking-tight">Pandoos</h1>
       </div>
 
       {/* Navigation */}

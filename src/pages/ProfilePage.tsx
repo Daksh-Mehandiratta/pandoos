@@ -436,7 +436,7 @@ export function ProfilePage() {
         </div>
 
         <div className="flex flex-col items-center gap-1 py-4 text-white/12">
-          <img src="/logo.png" alt="" className="w-8 h-8 opacity-15 object-contain grayscale" />
+          <img src="/logo.png" alt="" className="w-6 h-6 opacity-30 object-contain grayscale" />
           <p className="text-[10px] font-semibold tracking-widest uppercase text-white/15">Pandoos Music · v{APP_VERSION}</p>
         </div>
       </div>

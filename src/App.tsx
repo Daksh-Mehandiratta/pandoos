@@ -58,7 +58,7 @@ export function App() {
   if (!isInitialized) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-surface-base flex-col gap-4">
-        <img src="/logo.png" alt="Pandoos" className="w-24 h-24 object-contain animate-pulse" />
+        <img src="/logo.png" alt="Pandoos" className="w-16 h-16 object-contain animate-pulse" />
         <div className="w-8 h-8 rounded-full border-2 border-brand-primary border-t-transparent animate-spin" />
       </div>
     );
@@ -68,7 +68,7 @@ export function App() {
     <>
       <Suspense fallback={
         <div className="flex h-screen w-screen items-center justify-center bg-surface-base flex-col gap-4">
-          <img src="/logo.png" alt="Pandoos" className="w-24 h-24 object-contain animate-pulse" />
+          <img src="/logo.png" alt="Pandoos" className="w-16 h-16 object-contain animate-pulse" />
           <div className="w-8 h-8 rounded-full border-2 border-brand-primary border-t-transparent animate-spin" />
         </div>
       }>
