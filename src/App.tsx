@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useGamificationStore } from '@/stores/useGamificationStore';
 import { useAudioEngine } from '@/features/player/hooks/useAudioEngine';
 import { useMediaSession } from '@/hooks/useMediaSession';
+import { useRecommendEngine } from '@/hooks/useRecommendEngine';
 import { BadgeRevealModal } from '@/features/profile/BadgeRevealModal';
 
 import { HomePage } from '@/pages/HomePage';
@@ -30,6 +31,7 @@ export function App() {
   // Mount singleton hooks
   useAudioEngine();
   useMediaSession();
+  useRecommendEngine();
 
   // Initialize Supabase session on mount
   useEffect(() => {

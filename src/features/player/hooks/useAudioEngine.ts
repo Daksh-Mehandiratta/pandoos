@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useGamificationStore } from '@/stores/useGamificationStore';
+import { useTasteStore } from '@/stores/useTasteStore';
 import { PROGRESS_INTERVAL_MS } from '@/utils/constants';
 
 /**
@@ -41,6 +42,11 @@ export function useAudioEngine() {
 
   // Gamification
   const recordListenSession = useGamificationStore((state) => state.recordListenSession);
+
+  // Taste signals
+  const recordSkip = useTasteStore((state) => state.recordSkip);
+  const recordLoveTaste = useTasteStore((state) => state.recordLove);
+  const recordPlayTaste = useTasteStore((state) => state.recordPlay);
 
   // Track time listened for gamification
   const recordSession = (durationSeconds: number) => {
@@ -92,7 +98,18 @@ export function useAudioEngine() {
                 setIsPlaying(false);
                 stopProgressTracker();
                 if (sessionStartRef.current) {
-                  recordSession((Date.now() - sessionStartRef.current) / 1000);
+                  const listenedMs = Date.now() - sessionStartRef.current;
+                  const listenedSec = listenedMs / 1000;
+                  recordSession(listenedSec);
+                  // Taste signal: if listened < 30s it's a skip
+                  const curTrack = usePlayerStore.getState().currentTrack;
+                  if (curTrack) {
+                    if (listenedSec < 30) {
+                      recordSkip(curTrack);
+                    } else {
+                      recordPlayTaste(curTrack);
+                    }
+                  }
                   sessionStartRef.current = null;
                 }
                 nextTrack(); // Auto-advance queue

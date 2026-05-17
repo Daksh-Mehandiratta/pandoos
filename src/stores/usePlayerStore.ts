@@ -63,6 +63,11 @@ interface PlayerActions {
   /** Move a track in the queue (for drag-to-reorder) */
   reorderQueue: (fromIndex: number, toIndex: number) => void;
   clearQueue: () => void;
+  /**
+   * Inject recommended tracks right after the currently playing track.
+   * Skips duplicates already in the queue.
+   */
+  prependToQueue: (tracks: Track[]) => void;
   // ── Internal setters used only by the audio engine hook ──
   setProgress: (progress: number) => void;
   setDuration: (duration: number) => void;
@@ -305,6 +310,18 @@ export const usePlayerStore = create<PlayerStore>()(
           state.queue = state.currentTrack ? [state.currentTrack] : [];
           state.originalQueue = state.queue;
           state.queueIndex = 0;
+        });
+      },
+
+      prependToQueue: (tracks) => {
+        set((state) => {
+          const existingIds = new Set(state.queue.map(t => t.videoId));
+          const fresh = tracks.filter(t => !existingIds.has(t.videoId));
+          if (fresh.length === 0) return;
+          // Insert right after the currently playing track
+          const insertAt = state.queueIndex + 1;
+          state.queue.splice(insertAt, 0, ...fresh);
+          state.originalQueue = [...state.queue];
         });
       },
 

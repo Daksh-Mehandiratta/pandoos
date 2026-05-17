@@ -99,10 +99,22 @@ export function PandaMascot({ className, size = 120, emotion = 'neutral' }: Pand
 
         {/* Bollywood Starry Eyes */}
         {emotion === 'bollywood' && (
-          <motion.g fill="#facc15" animate={{ rotate: [0, 180, 360], scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 3, ease: "linear" }}>
-            <polygon points="65,85 68,92 75,95 68,98 65,105 62,98 55,95 62,92" />
-            <polygon points="135,85 138,92 145,95 138,98 135,105 132,98 125,95 132,92" />
-          </motion.g>
+          <>
+            <motion.polygon 
+              fill="#facc15" 
+              points="65,85 68,92 75,95 68,98 65,105 62,98 55,95 62,92" 
+              animate={{ rotate: [0, 180, 360], scale: [1, 1.3, 1] }} 
+              transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+              style={{ transformOrigin: "65px 95px" }}
+            />
+            <motion.polygon 
+              fill="#facc15" 
+              points="135,85 138,92 145,95 138,98 135,105 132,98 125,95 132,92" 
+              animate={{ rotate: [0, 180, 360], scale: [1, 1.3, 1] }} 
+              transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+              style={{ transformOrigin: "135px 95px" }}
+            />
+          </>
         )}
 
         {/* Sleepy / Sufi Eyes (Closed) */}
