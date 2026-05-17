@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/utils/cn';
-import { getBestThumbnail } from '@/services/youtube';
+import { TrackImage } from '@/components/shared/TrackImage';
 import type { Track } from '@/types/track';
 
 interface VinylRecordProps {
@@ -53,11 +53,10 @@ export function VinylRecord({ track, isPlaying, className }: VinylRecordProps) {
           }}
         >
           {track ? (
-            <img 
-              src={getBestThumbnail(track.videoId)} 
-              alt={track.title}
+            <TrackImage 
+              videoId={track.videoId}
+              title={track.title}
               className="w-full h-full object-cover saturate-150 contrast-125"
-              crossOrigin="anonymous"
             />
           ) : (
             <div className="w-full h-full bg-surface-overlay flex items-center justify-center text-brand-primary opacity-50">

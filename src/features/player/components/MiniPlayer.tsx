@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause } from 'lucide-react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useUIStore } from '@/stores/useUIStore';
-import { getBestThumbnail } from '@/services/youtube';
+import { TrackImage } from '@/components/shared/TrackImage';
 
 export function MiniPlayer() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
@@ -33,9 +33,9 @@ export function MiniPlayer() {
         <div className="flex items-center w-full px-3 gap-3 z-20">
           {/* Thumbnail */}
           <div className="w-11 h-11 rounded-md overflow-hidden shrink-0 shadow-md">
-            <img 
-              src={getBestThumbnail(currentTrack.videoId)} 
-              alt={currentTrack.title}
+            <TrackImage 
+              videoId={currentTrack.videoId}
+              title={currentTrack.title}
               className="w-full h-full object-cover"
             />
           </div>

@@ -2,10 +2,10 @@ import React from 'react';
 import { Maximize2, ListMusic, Volume2, Heart } from 'lucide-react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useUIStore } from '@/stores/useUIStore';
-import { getBestThumbnail } from '@/services/youtube';
 import { PlayerControls } from './PlayerControls';
 import { SeekBar } from './SeekBar';
 import { cn } from '@/utils/cn';
+import { TrackImage } from '@/components/shared/TrackImage';
 
 export function DesktopPlayer() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
@@ -20,9 +20,9 @@ export function DesktopPlayer() {
       {/* Left: Track Info */}
       <div className="flex items-center gap-4 w-[30%] min-w-[200px]">
         <div className="relative w-14 h-14 rounded-md overflow-hidden group shadow-md shrink-0">
-          <img 
-            src={getBestThumbnail(currentTrack.videoId)} 
-            alt={currentTrack.title} 
+          <TrackImage
+            videoId={currentTrack.videoId}
+            title={currentTrack.title}
             className="w-full h-full object-cover"
           />
           <button 

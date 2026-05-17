@@ -14,7 +14,7 @@ function mapSearchItemToTrack(item: YouTubeSearchItem): Track {
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>'),
     artist: item.snippet.channelTitle,
-    albumArt: item.snippet.thumbnails.maxres?.url ?? item.snippet.thumbnails.high.url,
+    albumArt: item.snippet.thumbnails.high?.url ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
     duration: 0,
     source: 'youtube' as const,
     channelTitle: item.snippet.channelTitle,

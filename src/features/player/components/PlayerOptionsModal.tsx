@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ListPlus, Download, Moon, X, Check } from 'lucide-react';
 import { usePlayerStore } from '@/stores/usePlayerStore';
 import { useGamificationStore } from '@/stores/useGamificationStore';
+import { TrackImage } from '@/components/shared/TrackImage';
 
 interface PlayerOptionsModalProps {
   isOpen: boolean;
@@ -80,9 +81,9 @@ export function PlayerOptionsModal({ isOpen, onClose }: PlayerOptionsModalProps)
             <div className="px-6 pb-8">
               {/* Header Track Info */}
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/5">
-                <img 
-                  src={currentTrack.albumArt} 
-                  alt="" 
+                <TrackImage
+                  videoId={currentTrack.videoId}
+                  title={currentTrack.title}
                   className="w-14 h-14 rounded-lg object-cover shadow-lg"
                 />
                 <div className="flex-1 min-w-0">
