@@ -15,6 +15,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { MobileLayout } from '@/components/layout/MobileLayout';
+import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
 
 export function App() {
   const initializeAuth = useAuthStore((state) => state.initialize);
@@ -77,6 +78,7 @@ export function App() {
         </Route>
       </Routes>
 
+      <OfflineIndicator />
       {/* Global Badge Reveal Modal — renders on top of everything */}
       <BadgeRevealModal />
     </>
