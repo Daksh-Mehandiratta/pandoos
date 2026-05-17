@@ -49,16 +49,18 @@ export function LoginPage() {
       {/* Mesmerizing Background Aurora (Hardware Accelerated) */}
       <div className="absolute inset-0 mood-bg pointer-events-none z-0 opacity-80" style={{ willChange: 'transform, opacity' }} />
       
-      {/* Floating Orbs for extra depth */}
+      {/* Floating Orbs for extra depth (Optimized for performance) */}
       <motion.div 
-        animate={{ y: [-20, 20, -20], x: [-10, 10, -10], rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-primary/20 rounded-full blur-[100px] pointer-events-none"
+        animate={{ y: [-15, 15, -15], x: [-5, 5, -5], rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+        style={{ willChange: 'transform' }}
+        className="absolute top-1/4 left-1/4 w-72 h-72 md:w-96 md:h-96 bg-brand-primary/20 rounded-full blur-[80px] pointer-events-none"
       />
       <motion.div 
-        animate={{ y: [20, -20, 20], x: [10, -10, 10], rotate: -360 }}
-        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-secondary/20 rounded-full blur-[100px] pointer-events-none"
+        animate={{ y: [15, -15, 15], x: [5, -5, 5], rotate: -360 }}
+        transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+        style={{ willChange: 'transform' }}
+        className="absolute bottom-1/4 right-1/4 w-72 h-72 md:w-96 md:h-96 bg-brand-secondary/20 rounded-full blur-[80px] pointer-events-none"
       />
 
       <motion.div 
@@ -70,7 +72,7 @@ export function LoginPage() {
         <div className="w-full glass-mood rounded-[2.5rem] p-10 flex flex-col items-center text-center shadow-2xl relative overflow-hidden group">
           
           {/* Dynamic Breathing Glow Border */}
-          <div className="absolute inset-0 rounded-[2.5rem] border border-white/10 group-hover:border-white/20 transition-colors duration-700" />
+          <div className="absolute inset-0 rounded-[2.5rem] border border-white/10 group-hover:border-white/20 transition-colors duration-700 pointer-events-none" />
           <motion.div 
             animate={{ opacity: [0.1, 0.3, 0.1] }}
             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
@@ -170,12 +172,16 @@ export function LoginPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="mt-6"
+            className="mt-6 relative z-20"
           >
              <button 
-               onClick={() => navigate('/')} 
+               type="button"
+               onClick={(e) => {
+                 e.preventDefault();
+                 navigate('/');
+               }} 
                disabled={isAuthenticating}
-               className={`text-sm font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest ${isAuthenticating ? 'opacity-50 cursor-not-allowed' : ''}`}
+               className={`text-sm font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest px-4 py-2 ${isAuthenticating ? 'opacity-50 cursor-not-allowed' : ''}`}
              >
                Skip for now
              </button>

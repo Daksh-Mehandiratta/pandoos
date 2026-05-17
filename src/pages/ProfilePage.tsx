@@ -420,6 +420,13 @@ export function ProfilePage() {
           <LogOut size={15} />
           Sign Out
         </button>
+
+        <div className="flex flex-col items-center gap-2 py-6 text-white/30 text-center px-4">
+          <p className="text-[13px] italic font-medium text-white/40 leading-relaxed">
+            "Life is short relax like a Panda and enjoy music"
+          </p>
+        </div>
+
         <div className="flex flex-col items-center gap-1 py-4 text-white/12">
           <img src="/panda_favicon.png" alt="" className="w-5 h-5 opacity-15 object-contain grayscale" />
           <p className="text-[10px] font-semibold tracking-widest uppercase text-white/15">Pandoos Music · v{APP_VERSION}</p>

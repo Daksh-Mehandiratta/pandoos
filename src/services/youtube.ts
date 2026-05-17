@@ -39,13 +39,26 @@ export async function searchTracks(query: string): Promise<Track[]> {
     'sufi ghazal peaceful lo-fi': 'sufi',
   };
 
-  const moodId = MOOD_QUERIES[query.toLowerCase().trim()];
+  const normalizedQuery = query.toLowerCase().trim();
+  let moodId = MOOD_QUERIES[normalizedQuery];
+  
+  if (!moodId) {
+    if (normalizedQuery.includes('sad') || normalizedQuery.includes('saad') || normalizedQuery.includes('cry')) moodId = 'heartbroken';
+    else if (normalizedQuery.includes('work') || normalizedQuery.includes('gym')) moodId = 'workout';
+    else if (normalizedQuery.includes('sleep') || normalizedQuery.includes('bed')) moodId = 'sleepy';
+    else if (normalizedQuery.includes('love') || normalizedQuery.includes('romanc')) moodId = 'romantic';
+    else if (normalizedQuery.includes('party') || normalizedQuery.includes('dance')) moodId = 'energy';
+    else if (normalizedQuery.includes('focus') || normalizedQuery.includes('study')) moodId = 'focus';
+    else if (normalizedQuery.includes('bolly')) moodId = 'bollywood';
+    else if (normalizedQuery.includes('desi') || normalizedQuery.includes('punjab')) moodId = 'desi';
+  }
+
   if (moodId && MOOD_SEEDS[moodId]) {
     // Return seeds instantly, wrapped in a resolved promise
     return Promise.resolve(MOOD_SEEDS[moodId]);
   }
 
-  let res: Response;
+  let res: Response | null = null;
   
   // Local DEV fallback so `npm run dev` works without Vercel CLI
   if (import.meta.env.DEV && import.meta.env.VITE_YOUTUBE_API_KEY) {
@@ -62,13 +75,28 @@ export async function searchTracks(query: string): Promise<Track[]> {
     res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=music`);
   }
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error((err as { error?: string }).error ?? `Search failed: ${res.status}`);
+  if (res && res.ok) {
+    const data = (await res.json()) as { items: YouTubeSearchItem[] };
+    return (data.items ?? []).map(mapSearchItemToTrack);
   }
 
-  const data = (await res.json()) as { items: YouTubeSearchItem[] };
-  return (data.items ?? []).map(mapSearchItemToTrack);
+  // 2. Client-side fallback if no API key in DEV or API fails
+  const fallbackResults: Track[] = [];
+  const searchTerms = normalizedQuery.split(' ').filter(t => t.length > 2);
+  Object.values(MOOD_SEEDS).flat().forEach(track => {
+    const trackText = `${track.title} ${track.artist}`.toLowerCase();
+    const isMatch = searchTerms.some(term => trackText.includes(term));
+    if (isMatch && !fallbackResults.find(t => t.id === track.id)) {
+      fallbackResults.push(track);
+    }
+  });
+  
+  if (fallbackResults.length > 0) {
+    return fallbackResults.sort(() => 0.5 - Math.random());
+  }
+
+  // If nothing matches, just return chill mood
+  return MOOD_SEEDS['chill'];
 }
 
 export async function getTrendingTracks(): Promise<Track[]> {
@@ -101,8 +129,10 @@ export async function getTrendingTracks(): Promise<Track[]> {
     res = await fetch('/api/trending');
   }
 
-  if (!res.ok) {
-    throw new Error(`Trending fetch failed: ${res.status}`);
+  if (!res || !res.ok) {
+    // Client-side fallback if no API key in DEV or API fails
+    const allTracks = Object.values(MOOD_SEEDS).flat();
+    return allTracks.sort(() => 0.5 - Math.random()).slice(0, 15);
   }
 
   const data = (await res.json()) as { items: YouTubeSearchItem[] };

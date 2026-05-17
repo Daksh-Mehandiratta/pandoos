@@ -4,22 +4,27 @@ import { Play, Sparkles, TrendingUp, Music, Clock, Zap, Brain, Dumbbell, Moon, C
 import { PandaMascot } from '@/features/panda/components/PandaMascot';
 import { useSearch, useTrending } from '@/features/search/hooks/useSearch';
 import { usePlayerStore } from '@/stores/usePlayerStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useGamificationStore } from '@/stores/useGamificationStore';
 import { useTasteStore } from '@/stores/useTasteStore';
-import { getBestThumbnail } from '@/services/youtube';
+import { getBestThumbnail, searchTracks } from '@/services/youtube';
 import { MOOD_SEEDS } from '@/data/moodSeeds';
 import { buildSearchQuery } from '@/services/recommendEngine';
 import type { Track } from '@/types/track';
 
 const MOODS = [
-  { id: 'bollywood', label: 'Bollywood 💫', query: 'bollywood pop romantic hits' },
-  { id: 'desi',      label: 'Desi Swag 🔥', query: 'desi hip hop punjabi swag' },
-  { id: 'sufi',      label: 'Sufi Soul 🕊️', query: 'sufi ghazal peaceful lo-fi' },
-  { id: 'chill',     label: 'Chill 🍃',      query: 'lofi chill relax aesthetic' },
-  { id: 'energy',    label: 'Energy ⚡',     query: 'high energy upbeat edm hits' },
-  { id: 'focus',     label: 'Focus 🧠',      query: 'deep focus ambient electronic' },
-  { id: 'workout',   label: 'Workout 🏋️',   query: 'heavy workout gym phonk' },
-  { id: 'latenight', label: 'Night 🌃',      query: 'late night drive synthwave retro' },
+  { id: 'bollywood',   label: 'Bollywood 💫', query: 'bollywood pop romantic hits' },
+  { id: 'desi',        label: 'Desi Swag 🔥', query: 'desi hip hop punjabi swag' },
+  { id: 'sufi',        label: 'Sufi Soul 🕊️', query: 'sufi ghazal peaceful lo-fi' },
+  { id: 'chill',       label: 'Chill 🍃',      query: 'lofi chill relax aesthetic' },
+  { id: 'energy',      label: 'Energy ⚡',     query: 'high energy upbeat edm hits' },
+  { id: 'focus',       label: 'Focus 🧠',      query: 'deep focus ambient electronic' },
+  { id: 'workout',     label: 'Workout 🏋️',   query: 'heavy workout gym phonk' },
+  { id: 'latenight',   label: 'Night 🌃',      query: 'late night drive synthwave retro' },
+  { id: 'happy',       label: 'Happy ☀️',      query: 'happy feel good uplifting pop' },
+  { id: 'romantic',    label: 'Romantic 💖',   query: 'romantic love songs acoustic' },
+  { id: 'heartbroken', label: 'Sad 🌧️',        query: 'sad emotional acoustic' },
+  { id: 'sleepy',      label: 'Sleepy 💤',     query: 'sleep ambient delta waves' },
 ];
 
 const GENRE_LABELS: Record<string, string> = {
@@ -43,6 +48,7 @@ export function HomePage() {
   const history = usePlayerStore(s => s.history);
   const currentTrack = usePlayerStore(s => s.currentTrack);
   const recordListenSession = useGamificationStore(s => s.recordListenSession);
+  const user = useAuthStore(s => s.user);
 
   // Taste profile
   const topGenres = useTasteStore(s => s.topGenres);
@@ -102,8 +108,26 @@ export function HomePage() {
   const handleChatSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
-    setSelectedMood({ id: 'custom', label: 'Custom', query: userInput } as any);
-    setCustomQuery(userInput + ' music vibes');
+    
+    const query = userInput + ' music vibes';
+    const normalized = userInput.toLowerCase();
+    
+    // Robust emotion detection for Panda graphic
+    let moodId = 'chill'; // default fallback
+    if (normalized.includes('sad') || normalized.includes('saad') || normalized.includes('cry') || normalized.includes('break')) moodId = 'heartbroken';
+    else if (normalized.includes('work') || normalized.includes('gym')) moodId = 'workout';
+    else if (normalized.includes('sleep') || normalized.includes('bed')) moodId = 'sleepy';
+    else if (normalized.includes('love') || normalized.includes('romanc')) moodId = 'romantic';
+    else if (normalized.includes('party') || normalized.includes('dance')) moodId = 'energy';
+    else if (normalized.includes('happy') || normalized.includes('good')) moodId = 'happy';
+    else if (normalized.includes('focus') || normalized.includes('study')) moodId = 'focus';
+    else if (normalized.includes('bolly')) moodId = 'bollywood';
+    else if (normalized.includes('desi') || normalized.includes('punjab')) moodId = 'desi';
+    else if (normalized.includes('sufi')) moodId = 'sufi';
+    else if (normalized.includes('night') || normalized.includes('late')) moodId = 'latenight';
+    
+    setSelectedMood({ id: moodId, label: 'Custom', query: userInput } as any);
+    setCustomQuery(query);
     setUserInput('');
   };
 
@@ -118,8 +142,9 @@ export function HomePage() {
       {/* ── HEADER ── */}
       <header className="w-full max-w-7xl px-4 md:px-8 pt-10 flex items-center justify-between mb-6 z-20">
         <div>
-          <h1 className="text-2xl md:text-4xl font-display font-extrabold text-white tracking-tight drop-shadow-lg">
-            {greeting} 👋
+          <h1 className="text-2xl md:text-4xl font-display font-extrabold text-white tracking-tight drop-shadow-lg flex items-center flex-wrap gap-2">
+            {greeting}{user ? <span className="text-brand-primary">, {user.username}</span> : ''}
+            <span className="inline-block animate-[wave_2s_ease-in-out_infinite] origin-bottom-right">👋</span>
           </h1>
           {isPersonalized && (
             <p className="text-white/50 text-sm mt-1 flex items-center gap-1">
@@ -135,7 +160,7 @@ export function HomePage() {
 
       {/* ── HERO ── */}
       <section className="relative w-full max-w-7xl px-4 md:px-8 mb-14 flex flex-col items-center">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] max-w-3xl h-64 bg-brand-primary/20 blur-[100px] -z-10 rounded-[100%]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] max-w-3xl h-64 bg-brand-primary/20 blur-[80px] -z-10 rounded-[100%] pointer-events-none" style={{ willChange: 'transform' }} />
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -174,9 +199,9 @@ export function HomePage() {
           />
           <button
             type="submit"
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-brand-primary text-white rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform shadow-glow-sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-brand-primary text-white rounded-full flex items-center justify-center transition-transform shadow-glow-sm hover:scale-110 active:scale-95"
           >
-            <Play size={16} fill="currentColor" className="ml-1" />
+            <Sparkles size={16} fill="currentColor" />
           </button>
         </form>
       </section>
@@ -353,6 +378,26 @@ export function HomePage() {
         />
 
       </div>
+
+      {/* ── FOOTER SLOGAN ── */}
+      <footer className="w-full max-w-7xl px-4 md:px-8 mt-8 mb-12 flex flex-col items-center justify-center text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="flex flex-col items-center gap-3"
+        >
+          <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-2 shadow-lg backdrop-blur-md">
+            <PandaMascot size={32} emotion="chill" />
+          </div>
+          <p className="text-lg md:text-xl font-medium italic text-white/70 drop-shadow-md px-4 tracking-wide">
+            "Life is short relax like a Panda and enjoy music"
+          </p>
+          <div className="w-24 h-[2px] mt-4 bg-gradient-to-r from-transparent via-brand-primary/50 to-transparent rounded-full" />
+        </motion.div>
+      </footer>
+
     </div>
   );
 }
