@@ -33,16 +33,11 @@ export function FullscreenPlayer() {
       isOpen={isPlayerOpen} 
       onClose={closePlayer} 
       fullScreen 
-      className="bg-black border-none shadow-none"
+      className="mood-bg border-none shadow-none"
     >
-      {/* Base solid background fallback */}
-      <div className="absolute inset-0 bg-[#111] -z-20" />
-
-      {/* Base Mood Color (Driven by Color Extractor) - NO black overlays */}
-      <div className="absolute inset-0 bg-brand-primary opacity-60 transition-colors duration-1000 ease-in-out -z-10" />
-      
       {/* Top light bloom for extra pop */}
-      <div className="absolute top-0 inset-x-0 h-[60vh] bg-brand-primary blur-[100px] transition-colors duration-1000 ease-in-out -z-10 pointer-events-none mix-blend-screen opacity-50" />
+      <div className="absolute top-0 inset-x-0 h-[60vh] bg-brand-primary blur-[100px] transition-colors duration-1000 ease-in-out pointer-events-none mix-blend-screen opacity-50 z-0" />
+
 
       {/* Main Content: Flexible vertical stack */}
       <div className="w-full h-full flex flex-col pb-safe">
