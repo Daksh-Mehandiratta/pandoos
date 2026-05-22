@@ -69,11 +69,11 @@ export function FullscreenPlayer() {
         </div>
 
         {/* Top Spacer */}
-        <div className="flex-grow max-h-[6vh]" />
+        <div className="flex-grow max-h-[4vh] shrink" />
 
-        {/* Massive Vinyl Player (Responsive Square) */}
-        <div className="w-full flex items-center justify-center relative shrink-0">
-          <div className="relative w-[82vw] max-w-[320px] md:max-w-[440px] aspect-square flex items-center justify-center">
+        {/* Massive Vinyl Player (Responsive Square constrained by height) */}
+        <div className="w-full flex-1 min-h-0 flex items-center justify-center relative px-6">
+          <div className="relative h-full max-h-[380px] md:max-h-[480px] aspect-square flex items-center justify-center max-w-full">
             <VinylRecord 
               track={currentTrack} 
               isPlaying={isPlaying} 
@@ -87,7 +87,7 @@ export function FullscreenPlayer() {
         </div>
 
         {/* Middle Spacer */}
-        <div className="flex-grow max-h-[8vh]" />
+        <div className="flex-grow max-h-[6vh] shrink" />
 
         {/* Bottom Controls Area (Clean Stack) */}
         <div className="w-full flex flex-col items-center justify-center gap-5 pb-6 px-6 md:px-12 shrink-0">
