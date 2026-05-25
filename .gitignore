@@ -26,3 +26,9 @@ dist-ssr
 # Electron Build outputs
 dist-electron/
 release/
+
+# ytdl-core player cache files (contain embedded Google API keys)
+*-player-script.js
+
+# Test scripts
+scripts/test-ytdl.ts
