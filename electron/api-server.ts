@@ -1,0 +1,113 @@
+import http from 'http';
+import url from 'url';
+import path from 'path';
+
+// Import all API handlers directly so Vite bundles them into the Electron main process
+import albumHandler from '../api/album';
+import artistHandler from '../api/artist';
+import chatHandler from '../api/chat';
+import downloadHandler from '../api/download';
+import lyricsHandler from '../api/lyrics';
+import oracleHandler from '../api/oracle';
+import proxyImageHandler from '../api/proxy-image';
+import radioHandler from '../api/radio';
+import searchHandler from '../api/search';
+import trendingHandler from '../api/trending';
+
+const handlers: Record<string, any> = {
+  'album': albumHandler,
+  'artist': artistHandler,
+  'chat': chatHandler,
+  'download': downloadHandler,
+  'lyrics': lyricsHandler,
+  'oracle': oracleHandler,
+  'proxy-image': proxyImageHandler,
+  'radio': radioHandler,
+  'search': searchHandler,
+  'trending': trendingHandler,
+};
+
+export function startLocalApiServer(): Promise<number> {
+  return new Promise((resolve) => {
+    const server = http.createServer(async (req, res) => {
+      // CORS headers
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+      if (req.method === 'OPTIONS') {
+        res.writeHead(200);
+        res.end();
+        return;
+      }
+
+      try {
+        if (!req.url) {
+          res.statusCode = 404;
+          return res.end('Not found');
+        }
+
+        const parsedUrl = url.parse(req.url, true);
+        const pathname = parsedUrl.pathname || '';
+        
+        // Match /api/{route}
+        const match = pathname.match(/^\/api\/([^\/]+)/);
+        if (!match) {
+          res.statusCode = 404;
+          return res.end('Not found');
+        }
+
+        const route = match[1];
+        const handler = handlers[route];
+
+        if (!handler) {
+          res.statusCode = 404;
+          return res.end('API route not found');
+        }
+
+        // Mock Vercel Request/Response
+        const vercelReq = req as any;
+        vercelReq.query = parsedUrl.query;
+        
+        // Parse body for POST requests
+        if (req.method === 'POST' || req.method === 'PUT') {
+          const chunks: any[] = [];
+          for await (const chunk of req) {
+            chunks.push(chunk);
+          }
+          const bodyStr = Buffer.concat(chunks).toString();
+          try {
+            vercelReq.body = JSON.parse(bodyStr);
+          } catch {
+            vercelReq.body = bodyStr;
+          }
+        }
+
+        const vercelRes = res as any;
+        vercelRes.status = (code: number) => {
+          vercelRes.statusCode = code;
+          return vercelRes;
+        };
+        vercelRes.json = (data: any) => {
+          vercelRes.setHeader('Content-Type', 'application/json');
+          vercelRes.end(JSON.stringify(data));
+        };
+
+        await handler(vercelReq, vercelRes);
+
+      } catch (err: any) {
+        console.error('API Error:', err);
+        if (!res.headersSent) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      }
+    });
+
+    server.listen(0, '127.0.0.1', () => {
+      const port = (server.address() as any).port;
+      console.log(`Local API server listening on port ${port}`);
+      resolve(port);
+    });
+  });
+}

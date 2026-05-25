@@ -21,4 +21,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Notifications
   notifySongChange: (track: any) => ipcRenderer.send('notify-song', track),
+
+  // API Backend
+  getApiUrl: () => ipcRenderer.sendSync('get-api-url'),
 });

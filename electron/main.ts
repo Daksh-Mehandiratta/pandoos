@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, dialog, Notification } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { startLocalApiServer } from './api-server';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -129,7 +130,16 @@ declare global {
 }
 app.isQuitting = false;
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Start the embedded local API server
+  const apiPort = await startLocalApiServer();
+  const apiUrl = `http://127.0.0.1:${apiPort}`;
+  
+  // Expose it to the frontend synchronous IPC
+  ipcMain.on('get-api-url', (event) => {
+    event.returnValue = apiUrl;
+  });
+
   createWindow();
   createTray();
   registerShortcuts();
