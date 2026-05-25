@@ -42,7 +42,7 @@ export function useRadioEngine() {
         const currentIds = new Set(store.queue.map(t => t.videoId));
         
         // Also keep track of the queue's tracks to deduplicate against
-        const queueTracks = store.queue;
+        const queueTracks = [...store.queue];
 
         const fresh = recs.filter(t => {
           // 1. Deduplicate by exact videoId

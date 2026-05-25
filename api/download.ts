@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import ytdl from '@distube/ytdl-core';
+import ytdlCore from '@distube/ytdl-core';
+
+// Handle potential ESM interop issues where CJS default export is nested under .default
+const ytdl = (ytdlCore as any).default || ytdlCore;
 
 export const config = {
   api: {
@@ -50,7 +53,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: any) {
     console.error('Download API Error:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || 'Internal Server Error' });
+      res.status(500).json({ error: error.stack || error.message || 'Internal Server Error' });
     }
   }
 }
+

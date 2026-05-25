@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import YTMusic from 'ytmusic-api';
+import ytmusicApi from 'ytmusic-api';
 
+// Handle potential ESM interop issues where CJS default export is nested under .default
+const YTMusic = (ytmusicApi as any).default || ytmusicApi;
 const ytmusic = new YTMusic();
 let initialized = false;
 
@@ -66,6 +68,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
     return res.status(200).json({ items: mappedItems, cached: false });
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.stack || error.message || 'Internal Server Error' });
   }
 }

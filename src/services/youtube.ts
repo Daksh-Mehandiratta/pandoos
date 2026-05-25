@@ -66,9 +66,13 @@ export async function getTrendingTracks(): Promise<Track[]> {
 export async function getRadioTracks(videoId: string): Promise<Track[]> {
   try {
     const res = await fetch(`/api/radio?videoId=${videoId}`);
-    if (!res.ok) throw new Error('Radio API failed');
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(`Radio API failed: ${errorData?.error || res.statusText}`);
+    }
     
     const data = (await res.json()) as { items: YouTubeSearchItem[] };
+
     const mapped = (data.items ?? []).map(mapSearchItemToTrack);
     
     return deduplicateTracks(mapped);
