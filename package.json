@@ -1,7 +1,7 @@
 {
   "name": "pandoos",
   "private": true,
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Pandoos Music Desktop App",
   "author": {
     "name": "Rajvansh",
@@ -60,7 +60,8 @@
     "publish": {
       "provider": "github",
       "owner": "Rajvansh-1",
-      "repo": "pandoos"
+      "repo": "pandoos",
+      "releaseType": "release"
     }
   },
   "dependencies": {
