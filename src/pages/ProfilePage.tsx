@@ -42,13 +42,17 @@ function BadgeDetailModal({ badge, earned, onClose }: { badge: Badge; earned: bo
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleNativeShare = () => {
+  const handleNativeShare = async () => {
     if (navigator.share) {
-      navigator.share({
-        title: `I earned: ${badge.name} on Pandoos!`,
-        text: shareMessages.general,
-        url: PANDOOS_URL,
-      });
+      try {
+        await navigator.share({
+          title: `I earned: ${badge.name} on Pandoos!`,
+          text: shareMessages.general,
+          url: PANDOOS_URL,
+        });
+      } catch (err) {
+        copyMessage('general');
+      }
     } else {
       copyMessage('general');
     }

@@ -155,15 +155,32 @@ export async function getUserPlaylists(userId: string): Promise<Playlist[]> {
 }
 
 export async function createPlaylist(userId: string, name: string, description = ''): Promise<Playlist> {
+  const localId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+  
   const { data, error } = await supabase
     .from('playlists')
     .insert({ user_id: userId, name, description, is_public: false, track_count: 0 })
     .select()
     .single();
 
-  if (error || !data) throw new Error(error?.message ?? 'Failed to create playlist');
+  let playlist: Playlist;
 
-  const playlist = rowToPlaylist(data);
+  if (!error && data) {
+    playlist = rowToPlaylist(data);
+  } else {
+    // Offline / Desktop fallback
+    playlist = {
+      id: localId,
+      userId,
+      name,
+      description,
+      coverUrl: '',
+      isPublic: false,
+      trackCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
 
   // Update cache
   const cached = getCache<Playlist[]>(CACHE.playlists(userId), []);
@@ -173,12 +190,25 @@ export async function createPlaylist(userId: string, name: string, description =
 }
 
 export async function deletePlaylist(playlistId: string): Promise<void> {
-  const { error } = await supabase
-    .from('playlists')
-    .delete()
-    .eq('id', playlistId);
+  // Optimistic local deletion requires userId, but we don't have it here. 
+  // We rely on React Query invalidation, but since we are offline, it might fetch the old cache.
+  // We'll iterate through localStorage to find and remove it.
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('pandoos_playlists_v3_')) {
+        const cached = getCache<Playlist[]>(key, []);
+        if (cached.find(p => p.id === playlistId)) {
+          setCache(key, cached.filter(p => p.id !== playlistId));
+          break;
+        }
+      }
+    }
+  } catch { /* ignore */ }
 
-  if (error) throw new Error(error.message);
+  try {
+    await supabase.from('playlists').delete().eq('id', playlistId);
+  } catch { /* will sync */ }
 }
 
 // ════════════════════════════════════════════════════════════

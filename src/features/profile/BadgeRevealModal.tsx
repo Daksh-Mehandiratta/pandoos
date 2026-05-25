@@ -120,14 +120,22 @@ function BadgeReveal({ badge, onDismiss }: { badge: Badge; onDismiss: () => void
     }
   }, [phase, glowControls]);
 
-  const handleShare = () => {
+  const handleShare = async () => {
     const text = `🐼 I just earned the "${badge.name}" ${badge.emoji} badge on Pandoos Music!\n\n"${badge.description}"\n\nJoin me → #PandoosMusic #WhereePandasVibe`;
-    if (navigator.share) {
-      navigator.share({ title: `I earned: ${badge.name}!`, text });
-    } else {
+    const fallbackCopy = () => {
       navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `I earned: ${badge.name}!`, text });
+      } catch (err) {
+        fallbackCopy();
+      }
+    } else {
+      fallbackCopy();
     }
   };
 
