@@ -63,32 +63,42 @@ export const useAuthStore = create<AuthStore>()(
     isInitialized: false,
 
     initialize: async () => {
-      // Load existing session (e.g., user refreshes the page)
-      const { data: { session } } = await supabase.auth.getSession();
+      try {
+        // Load existing session (e.g., user refreshes the page)
+        const { data: { session } } = await supabase.auth.getSession();
 
-      set((state) => {
-        state.session = session;
-        state.user = session ? sessionToUser(session) : null;
-        state.isInitialized = true;
-      });
-
-      // Listen for future auth changes (login, logout, token refresh)
-      supabase.auth.onAuthStateChange((_event, newSession) => {
         set((state) => {
-          state.session = newSession;
-          state.user = newSession ? sessionToUser(newSession) : null;
+          state.session = session;
+          state.user = session ? sessionToUser(session) : null;
+          state.isInitialized = true; // App can now render
         });
 
-        if (newSession?.user) {
-          // User just logged in — trigger cloud sync and realtime subscription
-          onUserLogin(newSession.user.id).catch(console.warn);
-          initNowPlayingSync(newSession.user.id);
-        } else {
-          // User logged out — stop sync
-          unsubscribeFromLibraryChanges();
-          stopNowPlayingSync();
-        }
-      });
+        // Listen for future auth changes (login, logout, token refresh)
+        supabase.auth.onAuthStateChange((_event, newSession) => {
+          set((state) => {
+            state.session = newSession;
+            state.user = newSession ? sessionToUser(newSession) : null;
+          });
+
+          if (newSession?.user) {
+            // User just logged in — trigger cloud sync and realtime subscription
+            onUserLogin(newSession.user.id).catch(console.warn);
+            initNowPlayingSync(newSession.user.id);
+          } else {
+            // User logged out — stop sync
+            unsubscribeFromLibraryChanges();
+            stopNowPlayingSync();
+          }
+        });
+      } catch (error) {
+        // CRITICAL: Always mark as initialized even if Supabase fails
+        // (e.g. network error, missing env vars in production build).
+        // Without this, App.tsx returns null forever → blank screen.
+        console.error('[Auth] Initialization failed, showing app without auth:', error);
+        set((state) => {
+          state.isInitialized = true;
+        });
+      }
     },
 
     signInWithEmail: async (email) => {
