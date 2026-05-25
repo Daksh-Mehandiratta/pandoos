@@ -1,7 +1,7 @@
 {
   "name": "pandoos",
   "private": true,
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Pandoos Music Desktop App",
   "author": {
     "name": "Rajvansh",
@@ -32,6 +32,13 @@
       "dist/**/*",
       "dist-electron/**/*",
       "public/logo.png",
+      "node_modules/@distube/ytdl-core/**/*",
+      "node_modules/m3u8stream/**/*",
+      "node_modules/miniget/**/*",
+      "node_modules/sax/**/*"
+    ],
+    "asarUnpack": [
+      "dist-electron/preload.cjs",
       "node_modules/@distube/ytdl-core/**/*",
       "node_modules/m3u8stream/**/*",
       "node_modules/miniget/**/*",
@@ -146,4 +153,5 @@
     "vite-plugin-pwa": "^1.3.0"
   }
 }
+
 

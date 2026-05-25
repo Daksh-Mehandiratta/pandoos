@@ -72,7 +72,11 @@ function createWindow() {
     // Restored native frame for standard window controls
     backgroundColor: '#0a0a0f',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
+      // In packaged app, preload.cjs is extracted to app.asar.unpacked/ by asarUnpack.
+      // In dev, __dirname is the real dist-electron/ folder.
+      preload: app.isPackaged
+        ? path.join(process.resourcesPath, 'app.asar.unpacked', 'dist-electron', 'preload.cjs')
+        : path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
       backgroundThrottling: false, // Keep playing music when minimized!
@@ -82,14 +86,23 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(VITE_DEV_SERVER_URL);
-    // mainWindow.webContents.openDevTools();
   } else {
     // In production, load from our local HTTP server instead of file://
-    // This fixes Google OAuth, CORS, absolute paths (/logo.png) and YouTube IFrame issues
-    const apiUrl = ipcMain.emit('get-api-url-internal') ? (global as any).apiUrl : null;
-    // We will set this global in app.whenReady
-    mainWindow.loadURL((global as any).apiUrl || 'http://127.0.0.1:0'); 
+    mainWindow.loadURL((global as any).apiUrl || 'http://127.0.0.1:15432');
   }
+
+  // ── Diagnostics ────────────────────────────────────────────────────────────
+  // Press F12 in the packaged app to open DevTools and see any console errors.
+  mainWindow.webContents.on('before-input-event', (_event, input) => {
+    if (input.key === 'F12') mainWindow?.webContents.openDevTools();
+  });
+
+  // If the page completely fails to load, show the actual error so we can debug
+  mainWindow.webContents.on('did-fail-load', (_event, code, desc, url) => {
+    console.error(`[Window] Failed to load: ${url} — ${code} ${desc}`);
+    mainWindow?.webContents.openDevTools();
+  });
+  // ───────────────────────────────────────────────────────────────────────────
 
   // Hide instead of close to keep playing in background
   mainWindow.on('close', (event) => {
