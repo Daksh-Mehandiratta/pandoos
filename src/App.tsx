@@ -16,6 +16,10 @@ import { useOfflineStore } from '@/stores/useOfflineStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { LevelUpConfetti } from '@/components/ui/LevelUpConfetti';
 import { DesktopTitleBar } from '@/components/layout/DesktopTitleBar';
+import { subscribeToLibraryChanges } from '@/services/syncService';
+import { updateNowPlayingState } from '@/services/nowPlayingSync';
+import { usePlayerStore } from '@/stores/usePlayerStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { VolumeIndicator } from '@/components/ui/VolumeIndicator';
@@ -56,6 +60,12 @@ export function App() {
 
   const initOfflineStore = useOfflineStore((state) => state.initOfflineStore);
   const activeTheme = useThemeStore((state) => state.activeTheme);
+  const queryClient = useQueryClient();
+
+  // Player state for nowPlaying sync
+  const currentTrack = usePlayerStore((state) => state.currentTrack);
+  const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const progress = usePlayerStore((state) => state.progress);
 
   useAudioEngine();
   useRadioEngine();
@@ -67,6 +77,18 @@ export function App() {
     initializeAuth();
     initOfflineStore();
   }, [initializeAuth, initOfflineStore]);
+
+  // Wire realtime library sync when user logs in
+  useEffect(() => {
+    if (user?.id) {
+      subscribeToLibraryChanges(user.id, queryClient);
+    }
+  }, [user?.id, queryClient]);
+
+  // Continuously update nowPlayingSync with latest player state
+  useEffect(() => {
+    updateNowPlayingState(currentTrack, isPlaying, progress);
+  }, [currentTrack, isPlaying, progress]);
 
   // Apply Theme to HTML root
   useEffect(() => {

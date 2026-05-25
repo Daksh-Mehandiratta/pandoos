@@ -20,6 +20,7 @@ export const QUERY_KEYS = {
   lyrics: (title: string, artist: string) => ['lyrics', title, artist] as const,
   playlists: (userId: string) => ['playlists', userId] as const,
   playlist: (id: string) => ['playlist', id] as const,
+  playlistTracks: (playlistId: string) => ['playlist-tracks', playlistId] as const,
   likedSongs: (userId: string) => ['liked-songs', userId] as const,
   followedArtists: (userId: string) => ['followed-artists', userId] as const,
 } as const;

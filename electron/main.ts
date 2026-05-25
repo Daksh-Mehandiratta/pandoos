@@ -1,11 +1,40 @@
-import { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Disable GPU acceleration if it causes issues on some Windows systems, but generally better to leave on
+// Auto-updater (only active in packaged builds, not in dev)
+let autoUpdater: any = null;
+if (app.isPackaged) {
+  import('electron-updater').then(({ autoUpdater: updater }) => {
+    autoUpdater = updater;
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    
+    autoUpdater.on('update-available', () => {
+      mainWindow?.webContents.send('update-available');
+    });
+    autoUpdater.on('update-downloaded', () => {
+      const choice = dialog.showMessageBoxSync(mainWindow!, {
+        type: 'info',
+        title: 'Update Ready',
+        message: '🐼 A new version of Pandoos is ready! Restart to install.',
+        buttons: ['Restart Now', 'Later'],
+        defaultId: 0,
+      });
+      if (choice === 0) autoUpdater.quitAndInstall();
+    });
+    
+    // Check for updates 5 seconds after launch
+    setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+    // Then every hour
+    setInterval(() => autoUpdater.checkForUpdates(), 60 * 60 * 1000);
+  }).catch(() => { /* updater not available */ });
+}
+
+
 // app.disableHardwareAcceleration();
 
 let mainWindow: BrowserWindow | null = null;

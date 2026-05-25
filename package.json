@@ -8,7 +8,58 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-icon": "node scripts/generate-icon.mjs",
+    "dist": "npm run generate-icon && npm run build && electron-builder",
+    "dist:win": "npm run generate-icon && npm run build && electron-builder --win",
+    "dist:mac": "npm run generate-icon && npm run build && electron-builder --mac",
+    "dist:linux": "npm run generate-icon && npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.pandoos.music",
+    "productName": "Pandoos Music",
+    "copyright": "Copyright © 2025 Pandoos",
+    "directories": {
+      "output": "release"
+    },
+    "icon": "build/icon.png",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "public/logo.png"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerHeaderIcon": "build/icon.png",
+      "installerIcon": "build/icon.png",
+      "uninstallerIcon": "build/icon.png",
+      "shortcutName": "Pandoos Music"
+    },
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "build/icon.png",
+      "category": "Audio"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Rajvansh-1",
+      "repo": "pandoos"
+    }
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
@@ -49,6 +100,8 @@
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
     "electron": "^42.2.0",
+    "electron-builder": "^26.8.1",
+    "electron-updater": "^6.8.3",
     "esbuild": "^0.28.0",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",

@@ -3,6 +3,8 @@ import { immer } from 'zustand/middleware/immer';
 import type { Session } from '@supabase/supabase-js';
 import type { PandoosUser } from '@/types/user';
 import { supabase } from '@/services/supabase';
+import { onUserLogin, unsubscribeFromLibraryChanges } from '@/services/syncService';
+import { initNowPlayingSync, stopNowPlayingSync } from '@/services/nowPlayingSync';
 
 interface AuthStoreState {
   user: PandoosUser | null;
@@ -76,6 +78,16 @@ export const useAuthStore = create<AuthStore>()(
           state.session = newSession;
           state.user = newSession ? sessionToUser(newSession) : null;
         });
+
+        if (newSession?.user) {
+          // User just logged in — trigger cloud sync and realtime subscription
+          onUserLogin(newSession.user.id).catch(console.warn);
+          initNowPlayingSync(newSession.user.id);
+        } else {
+          // User logged out — stop sync
+          unsubscribeFromLibraryChanges();
+          stopNowPlayingSync();
+        }
       });
     },
 
