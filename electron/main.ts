@@ -133,6 +133,21 @@ declare global {
 }
 app.isQuitting = false;
 
+// Single-instance lock: if another instance is already running, focus it and quit this one
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    // Someone tried to run a second instance — focus our existing window instead
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 app.whenReady().then(async () => {
   // Start the embedded local API server
   const apiPort = await startLocalApiServer();
