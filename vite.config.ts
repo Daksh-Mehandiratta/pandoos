@@ -153,10 +153,17 @@ export default defineConfig({
       // '@/' maps to src/ — consistent across all files and Capacitor builds
       '@': path.resolve(__dirname, './src'),
     },
+    // Force a single copy of React everywhere — prevents "Expected static flag" crash in Electron
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
+  },
+  optimizeDeps: {
+    // Pre-bundle React so vite-plugin-electron-renderer can't load a second copy
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
   },
   server: {
     port: 5173,
     host: true, // needed for Capacitor live reload on physical devices
+    strictPort: true, // fail if 5173 is busy instead of silently switching to 5174
   },
   build: {
     target: 'es2020', // Capacitor WebView supports ES2020
