@@ -53,7 +53,7 @@ function createWindow() {
     // Restored native frame for standard window controls
     backgroundColor: '#0a0a0f',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
       backgroundThrottling: false, // Keep playing music when minimized!

@@ -78,12 +78,35 @@ export default defineConfig({
     apiProxyPlugin(),
     electron([
       {
+        // Main process: ESM is fine here
         entry: 'electron/main.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              output: {
+                format: 'esm',
+                entryFileNames: '[name].js',
+              },
+            },
+          },
+        },
       },
       {
+        // Preload MUST be CommonJS — Electron cannot load ESM preloads
+        // Output as .cjs so Node ignores the "type":"module" in package.json
         entry: 'electron/preload.ts',
         onstart(options) {
-          options.reload()
+          options.reload();
+        },
+        vite: {
+          build: {
+            rollupOptions: {
+              output: {
+                format: 'cjs',
+                entryFileNames: '[name].cjs',
+              },
+            },
+          },
         },
       },
     ]),
