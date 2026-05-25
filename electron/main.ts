@@ -42,6 +42,25 @@ if (app.isPackaged) {
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
+// CRITICAL: Set userData to a local path BEFORE app.whenReady()
+// The project lives on OneDrive Desktop, which locks files during sync.
+// This causes Electron's GPU/network disk cache to fail with "Access is denied".
+// Pointing userData to local AppData fixes all cache errors.
+if (app.isPackaged) {
+  // In production: use the standard AppData location (set automatically by Electron)
+  // but ensure it's not overridden by a sync folder
+  const localAppData = process.env.LOCALAPPDATA || process.env.APPDATA;
+  if (localAppData) {
+    app.setPath('userData', path.join(localAppData, 'Pandoos Music'));
+  }
+} else {
+  // In dev: also avoid OneDrive by using a temp cache dir in AppData
+  const localAppData = process.env.LOCALAPPDATA || process.env.APPDATA;
+  if (localAppData) {
+    app.setPath('userData', path.join(localAppData, 'Pandoos Music Dev'));
+  }
+}
+
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 
 function createWindow() {
