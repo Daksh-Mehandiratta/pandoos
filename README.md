@@ -1,73 +1,55 @@
-# React + TypeScript + Vite
+<div align="center">
+  <img src="public/logo.png" width="128" height="128" alt="Pandoos Logo">
+  
+  # 🐼 Pandoos Music
+  
+  **Where Pandas Vibe.**
+  
+  A completely reimagined listening experience designed for maximum chill, intense focus, and pure sonic energy. Beautifully crafted, lightning fast, and built to adapt to whatever mood you're in.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+  <p>
+    <a href="https://pandoos.vercel.app"><b>Open Web App</b></a> • 
+    <a href="https://github.com/Rajvansh-1/pandoos/releases"><b>Download Desktop App</b></a>
+  </p>
+</div>
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎶 The Experience
 
-## React Compiler
+Pandoos isn't just a music player. It's a living environment. 
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Vibe-Driven Curation**: Our dynamic mood engine curates exactly what you need—whether you're crushing a workout, locking in for deep work, or just kicking back.
+- **Panda Gamification**: Level up your listening. Earn mysterious badges, unlock ranks from *Bamboo Novice* to *Zen Oracle*, and track your daily streaks.
+- **Silky Smooth Aesthetics**: A handcrafted interface featuring adaptive dynamic coloring, glassmorphism, fluid micro-animations, and full-screen immersive modes.
+- **Native Desktop Integration**: Download the desktop app for native media key support, background playback, and beautiful OS-level notifications.
 
-## Expanding the ESLint configuration
+## 🚀 Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 🎧 **Unlimited Listening**: Find almost any track in the world and play it instantly.
+- 🎨 **Adaptive Color Extraction**: The entire app fluidly shifts its color palette to match the artwork of your currently playing track.
+- 🏆 **Gamified Journey**: Track your listening hours, build your streak, and earn rare achievements.
+- 🌙 **Deep Immersive Mode**: Click the album art to enter a distraction-free, cinematic full-screen player.
+- ⚡ **Desktop & Web**: Play flawlessly in your browser, or install the lightweight desktop app for Windows, macOS, and Linux.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📥 Download
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+The desktop app brings the ultimate Pandoos experience directly to your OS, bypassing the browser entirely.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**[Download the latest release for Windows, macOS, or Linux here](https://github.com/Rajvansh-1/pandoos/releases)**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+*(If you receive a SmartScreen or Gatekeeper warning on first launch, click "More info" and "Run anyway" — Pandoos is completely safe.)*
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+## 🐾 Join the Vibe
+
+Music is better when you're not alone. Share your badges, compare your top moods, and discover what the Pandas are listening to.
+
+*"Life is short relax like a Panda and enjoy music"*
+
+<div align="center">
+  <sub>Built with ❤️ for the love of music.</sub>
+</div>
