@@ -358,7 +358,7 @@ export function HomePage() {
         <ContentRow
           title="Jump Back In"
           gradient="from-slate-600 to-slate-800"
-          emotion="neutral"
+          emotion="chill"
           icon={Clock}
           tracks={quickPicks}
           isLoading={false}
@@ -372,7 +372,7 @@ export function HomePage() {
             title="Because You're Listening"
             subtitle={`More like "${currentTrack.title.slice(0, 30)}…"`}
             gradient="from-violet-600 to-fuchsia-700"
-            emotion="energy"
+            emotion={selectedMood.id}
             icon={Radio}
             tracks={deduplicatedLanes.nowVibe}
             isLoading={isNowVibeLoading}
@@ -408,7 +408,7 @@ export function HomePage() {
             title={`Echoes of ${artistDisplayName}`}
             subtitle="The timeline shifts based on your last adventure."
             gradient="from-cyan-600 to-blue-700"
-            emotion="focus"
+            emotion="chill"
             icon={Compass}
             tracks={deduplicatedLanes.artist}
             isLoading={isArtistLoading}
@@ -424,7 +424,7 @@ export function HomePage() {
             title={vibe.title}
             subtitle={idx === 0 ? "🔮 Top AI Match curated for this exact moment." : undefined}
             gradient={idx === 0 ? "from-emerald-600 to-teal-800" : idx === 1 ? "from-rose-600 to-orange-700" : "from-blue-600 to-indigo-800"}
-            emotion="energy"
+            emotion={vibe.id}
             icon={Brain}
             tracks={vibe.songs.filter(s => !deduplicatedLanes.oracle?.some(t => t.videoId === s.videoId))}
             isLoading={isOracleLoading}
@@ -440,7 +440,7 @@ export function HomePage() {
         <ContentRow
           title="T-Series Exclusives"
           gradient="from-red-600 to-red-900"
-          emotion="energy"
+          emotion="bollywood"
           icon={Flame}
           tracks={deduplicatedLanes.tseries}
           isLoading={isTseriesLoading}
@@ -477,7 +477,7 @@ export function HomePage() {
         <ContentRow
           title="Global Top Hits"
           gradient="from-blue-600 to-sky-800"
-          emotion="focus"
+          emotion="energy"
           icon={TrendingUp}
           tracks={deduplicatedLanes.trending}
           isLoading={isTrendingLoading}
@@ -500,6 +500,8 @@ export function HomePage() {
 
       </div>
 
+      <PandaFooter />
+
       <PandaChatModal
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
@@ -510,6 +512,60 @@ export function HomePage() {
 }
 
 // ─── Helper Components ─────────────────────────────────────────────────────────
+
+function PandaFooter() {
+  const isPlaying = usePlayerStore(s => s.isPlaying);
+  
+  return (
+    <div className="w-full flex flex-col items-center justify-center mt-12 mb-12 gap-3 opacity-95">
+      <motion.div
+        animate={isPlaying ? { y: [0, -10, 0] } : { y: [0, -4, 0] }}
+        transition={{
+          duration: isPlaying ? 0.6 : 3,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+        className="w-16 h-16 rounded-full glass border border-white/10 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.08)] relative mb-2"
+      >
+        <PandaMascot size={42} emotion="chill" />
+        {isPlaying && (
+          <motion.div 
+            className="absolute -inset-2 rounded-full border-2 border-[hsl(var(--color-primary))] opacity-50"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        )}
+      </motion.div>
+      
+      <motion.h3 
+        className="text-lg md:text-xl font-display font-bold italic tracking-wide px-4 text-center"
+        style={{
+          background: 'linear-gradient(135deg, #ffffff 30%, hsl(var(--color-primary)) 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.15))'
+        }}
+        animate={{ opacity: [0.85, 1, 0.85], scale: [0.99, 1.01, 0.99] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        "Life is short, relax like a Panda and enjoy music"
+      </motion.h3>
+
+      <motion.div 
+        className="h-[2px] rounded-full mt-3"
+        style={{
+          width: '180px',
+          background: 'linear-gradient(90deg, transparent, hsl(var(--color-primary)), transparent)',
+          boxShadow: '0 0 16px hsl(var(--color-primary))'
+        }}
+        animate={{ opacity: [0.4, 0.9, 0.4], width: ['140px', '200px', '140px'] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      />
+    </div>
+  );
+}
+
 
 function ContentRow({ title, subtitle, gradient, emotion, icon: Icon, tracks, isLoading, onPlay, lovedIds = [], highlight, expandMoodId }: any) {
   if (!isLoading && (!tracks || tracks.length === 0)) return null;
