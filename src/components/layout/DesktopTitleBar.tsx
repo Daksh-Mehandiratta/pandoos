@@ -2,16 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Minus, Square, X } from 'lucide-react';
 
 export function DesktopTitleBar() {
-  const [isElectron, setIsElectron] = useState(false);
-
-  useEffect(() => {
-    // Check if we are running in Electron
-    if (window.electronAPI) {
-      setIsElectron(true);
-    }
-  }, []);
-
-  if (!isElectron) return null;
+  // If we aren't in Electron, don't show the custom title bar
+  if (!window.electronAPI) return null;
 
   return (
     <div 
