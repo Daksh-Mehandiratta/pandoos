@@ -15,7 +15,6 @@ import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
 import { useOfflineStore } from '@/stores/useOfflineStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { LevelUpConfetti } from '@/components/ui/LevelUpConfetti';
-import { DesktopTitleBar } from '@/components/layout/DesktopTitleBar';
 import { subscribeToLibraryChanges } from '@/services/syncService';
 import { updateNowPlayingState } from '@/services/nowPlayingSync';
 import { usePlayerStore } from '@/stores/usePlayerStore';
@@ -123,7 +122,6 @@ export function App() {
 
   return (
     <>
-      <DesktopTitleBar />
       <Suspense fallback={null}>
         <RouteTracker />
         <Routes>

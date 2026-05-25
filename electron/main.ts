@@ -50,10 +50,8 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    frame: false, // Frameless window for custom title bar
-    titleBarStyle: 'hidden', // Required for Mac/Windows to hide title bar but keep window controls if wanted
-    transparent: true, // Allows rounded corners or glassy effects
-    backgroundColor: '#00000000',
+    // Restored native frame for standard window controls
+    backgroundColor: '#0a0a0f',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -67,7 +65,11 @@ function createWindow() {
     mainWindow.loadURL(VITE_DEV_SERVER_URL);
     // mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // In production, load from our local HTTP server instead of file://
+    // This fixes Google OAuth, CORS, absolute paths (/logo.png) and YouTube IFrame issues
+    const apiUrl = ipcMain.emit('get-api-url-internal') ? (global as any).apiUrl : null;
+    // We will set this global in app.whenReady
+    mainWindow.loadURL((global as any).apiUrl || 'http://127.0.0.1:0'); 
   }
 
   // Hide instead of close to keep playing in background
@@ -135,6 +137,7 @@ app.whenReady().then(async () => {
   // Start the embedded local API server
   const apiPort = await startLocalApiServer();
   const apiUrl = `http://127.0.0.1:${apiPort}`;
+  (global as any).apiUrl = apiUrl;
   
   // Expose it to the frontend synchronous IPC
   ipcMain.on('get-api-url', (event) => {

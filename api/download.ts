@@ -21,7 +21,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
 
   try {
-    const info = await ytdl.getInfo(url);
+    const agent = ytdl.createAgent();
+    const info = await ytdl.getInfo(url, { agent });
     const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'highestaudio', filter: 'audioonly' });
 
     if (!audioFormat) {
