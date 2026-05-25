@@ -1,7 +1,7 @@
 {
   "name": "pandoos",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Pandoos Music Desktop App",
   "author": {
     "name": "Rajvansh",
@@ -45,9 +45,6 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "installerHeaderIcon": "build/icon.png",
-      "installerIcon": "build/icon.png",
-      "uninstallerIcon": "build/icon.png",
       "shortcutName": "Pandoos Music"
     },
     "mac": {
