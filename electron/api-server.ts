@@ -1,6 +1,8 @@
 import http from 'http';
 import url from 'url';
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 // Import all API handlers directly so Vite bundles them into the Electron main process
 import albumHandler from '../api/album';
@@ -27,8 +29,38 @@ const handlers: Record<string, any> = {
   'trending': trendingHandler,
 };
 
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js':   'text/javascript',
+  '.mjs':  'text/javascript',
+  '.cjs':  'text/javascript',
+  '.css':  'text/css',
+  '.json': 'application/json',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg':  'image/svg+xml',
+  '.ico':  'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2':'font/woff2',
+  '.webp': 'image/webp',
+  '.mp3':  'audio/mpeg',
+  '.webm': 'audio/webm',
+};
+
 export function startLocalApiServer(): Promise<number> {
   return new Promise((resolve) => {
+    // Resolve dist folder relative to THIS file at runtime
+    // In packaged app: app.asar/dist-electron/api-server → dist is app.asar/dist
+    const serverFileUrl = import.meta.url;
+    const serverFilePath = fileURLToPath(serverFileUrl);
+    const serverDir = path.dirname(serverFilePath);
+    const distPath = path.resolve(serverDir, '..', 'dist');
+
+    console.log('[API Server] serverDir:', serverDir);
+    console.log('[API Server] distPath:', distPath);
+    console.log('[API Server] index.html exists:', fs.existsSync(path.join(distPath, 'index.html')));
+
     const server = http.createServer(async (req, res) => {
       // CORS headers
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -49,47 +81,30 @@ export function startLocalApiServer(): Promise<number> {
 
         const parsedUrl = url.parse(req.url, true);
         const pathname = parsedUrl.pathname || '';
-        
+
         // Match /api/{route}
         const match = pathname.match(/^\/api\/([^\/]+)/);
         if (!match) {
           // Serve static files from dist folder
-          import('fs').then(fs => {
-            const distPath = path.join(__dirname, '../dist');
-            let filePath = path.join(distPath, pathname === '/' ? 'index.html' : pathname);
-            
-            // SPA Fallback
-            if (!fs.existsSync(filePath)) {
-              filePath = path.join(distPath, 'index.html');
+          let filePath = path.join(distPath, pathname === '/' ? 'index.html' : pathname);
+
+          // SPA Fallback — any unknown route serves index.html
+          if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+            filePath = path.join(distPath, 'index.html');
+          }
+
+          const ext = path.extname(filePath).toLowerCase();
+          const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+          fs.readFile(filePath, (err, content) => {
+            if (err) {
+              console.error('[API Server] readFile error:', err.message, filePath);
+              res.writeHead(500);
+              res.end(`Server error: ${err.message}`);
+            } else {
+              res.writeHead(200, { 'Content-Type': contentType });
+              res.end(content);
             }
-            
-            const ext = path.extname(filePath).toLowerCase();
-            const mimeTypes: Record<string, string> = {
-              '.html': 'text/html',
-              '.js': 'text/javascript',
-              '.css': 'text/css',
-              '.json': 'application/json',
-              '.png': 'image/png',
-              '.jpg': 'image/jpeg',
-              '.jpeg': 'image/jpeg',
-              '.svg': 'image/svg+xml',
-              '.ico': 'image/x-icon',
-              '.woff': 'font/woff',
-              '.woff2': 'font/woff2',
-              '.webp': 'image/webp'
-            };
-            
-            const contentType = mimeTypes[ext] || 'application/octet-stream';
-            
-            fs.readFile(filePath, (err, content) => {
-              if (err) {
-                res.writeHead(500);
-                res.end('Server error');
-              } else {
-                res.writeHead(200, { 'Content-Type': contentType });
-                res.end(content, 'utf-8');
-              }
-            });
           });
           return;
         }
