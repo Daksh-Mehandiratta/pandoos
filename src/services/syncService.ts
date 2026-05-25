@@ -32,7 +32,7 @@ export async function onUserLogin(userId: string): Promise<void> {
  * push it all to Supabase and wipe the old keys.
  */
 async function migrateLocalDataToCloud(userId: string): Promise<void> {
-  // Migrate liked songs from v1 keys
+  // Migrate liked songs from old localStorage keys to Supabase
   const oldLikedKey = 'pandoos_liked_songs_v1';
   const oldLiked = localStorage.getItem(oldLikedKey);
   if (oldLiked) {
@@ -43,7 +43,10 @@ async function migrateLocalDataToCloud(userId: string): Promise<void> {
         const rows = userLiked.map((track: any) => ({
           user_id: userId,
           video_id: track.videoId,
-          track_data: track,
+          title: track.title,
+          artist: track.artist,
+          album_art: track.albumArt,
+          duration: track.duration ?? 0,
         }));
         await supabase.from('liked_songs').upsert(rows, { onConflict: 'user_id,video_id' });
         console.log(`[SyncService] Migrated ${rows.length} liked songs to cloud`);
@@ -52,50 +55,7 @@ async function migrateLocalDataToCloud(userId: string): Promise<void> {
     } catch { /* ignore */ }
   }
 
-  // Migrate playlists from v1 keys
-  const oldPlaylistKey = 'pandoos_playlists_v1';
-  const oldPlaylistTracksKey = 'pandoos_playlist_tracks_v1';
-  const oldPlaylists = localStorage.getItem(oldPlaylistKey);
-  if (oldPlaylists) {
-    try {
-      const playlists = JSON.parse(oldPlaylists) as any[];
-      const userPlaylists = playlists.filter(p => p.userId === userId);
-      if (userPlaylists.length) {
-        for (const p of userPlaylists) {
-          await supabase.from('playlists').upsert({
-            id: p.id,
-            user_id: userId,
-            name: p.name,
-            description: p.description || '',
-            is_public: p.isPublic || false,
-            track_count: p.trackCount || 0,
-            created_at: p.createdAt,
-            updated_at: p.updatedAt,
-          }, { onConflict: 'id' });
-
-          // Migrate tracks
-          const trackMap = localStorage.getItem(oldPlaylistTracksKey);
-          if (trackMap) {
-            const allTracks = JSON.parse(trackMap) as Record<string, any[]>;
-            const tracks = allTracks[p.id] || [];
-            if (tracks.length) {
-              const rows = tracks.map((t: any, i: number) => ({
-                playlist_id: p.id,
-                track_data: t,
-                position: i,
-              }));
-              await supabase.from('playlist_tracks').upsert(rows, { onConflict: 'id' });
-            }
-          }
-        }
-        console.log(`[SyncService] Migrated ${userPlaylists.length} playlists to cloud`);
-      }
-      localStorage.removeItem(oldPlaylistKey);
-      localStorage.removeItem(oldPlaylistTracksKey);
-    } catch { /* ignore */ }
-  }
-
-  // Migrate followed artists from v1
+  // Migrate followed artists from old localStorage keys to Supabase
   const oldFollowedKey = 'pandoos_followed_artists_v1';
   const oldFollowed = localStorage.getItem(oldFollowedKey);
   if (oldFollowed) {
@@ -106,7 +66,8 @@ async function migrateLocalDataToCloud(userId: string): Promise<void> {
         const rows = userFollowed.map((a: any) => ({
           user_id: userId,
           artist_id: a.artistId,
-          artist_data: a,
+          name: a.name,
+          thumbnail_url: a.thumbnails?.[0]?.url ?? null,
         }));
         await supabase.from('followed_artists').upsert(rows, { onConflict: 'user_id,artist_id' });
         console.log(`[SyncService] Migrated ${rows.length} followed artists to cloud`);
