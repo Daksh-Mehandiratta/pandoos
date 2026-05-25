@@ -1,0 +1,136 @@
+import { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage } from 'electron';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Disable GPU acceleration if it causes issues on some Windows systems, but generally better to leave on
+// app.disableHardwareAcceleration();
+
+let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+
+const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    frame: false, // Frameless window for custom title bar
+    titleBarStyle: 'hidden', // Required for Mac/Windows to hide title bar but keep window controls if wanted
+    transparent: true, // Allows rounded corners or glassy effects
+    backgroundColor: '#00000000',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      backgroundThrottling: false, // Keep playing music when minimized!
+    },
+    icon: path.join(__dirname, '../public/logo.png'),
+  });
+
+  if (VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(VITE_DEV_SERVER_URL);
+    // mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
+
+  // Hide instead of close to keep playing in background
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+}
+
+function createTray() {
+  const icon = nativeImage.createFromPath(path.join(__dirname, '../public/logo.png')).resize({ width: 16, height: 16 });
+  tray = new Tray(icon);
+  
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Show Pandoos', click: () => mainWindow?.show() },
+    { label: 'Play / Pause', click: () => mainWindow?.webContents.send('media-play-pause') },
+    { label: 'Next Track', click: () => mainWindow?.webContents.send('media-next') },
+    { label: 'Previous Track', click: () => mainWindow?.webContents.send('media-prev') },
+    { type: 'separator' },
+    { label: 'Quit', click: () => {
+        app.isQuitting = true;
+        app.quit();
+      } 
+    }
+  ]);
+
+  tray.setToolTip('Pandoos Music');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    if (mainWindow?.isVisible()) {
+      mainWindow.hide();
+    } else {
+      mainWindow?.show();
+      mainWindow?.focus();
+    }
+  });
+}
+
+function registerShortcuts() {
+  globalShortcut.register('MediaPlayPause', () => {
+    mainWindow?.webContents.send('media-play-pause');
+  });
+  globalShortcut.register('MediaNextTrack', () => {
+    mainWindow?.webContents.send('media-next');
+  });
+  globalShortcut.register('MediaPreviousTrack', () => {
+    mainWindow?.webContents.send('media-prev');
+  });
+}
+
+// Ensure app.isQuitting flag is available
+declare global {
+  namespace Electron {
+    interface App {
+      isQuitting: boolean;
+    }
+  }
+}
+app.isQuitting = false;
+
+app.whenReady().then(() => {
+  createWindow();
+  createTray();
+  registerShortcuts();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    } else {
+      mainWindow?.show();
+    }
+  });
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// IPC listeners for the custom title bar
+ipcMain.on('window-minimize', () => mainWindow?.minimize());
+ipcMain.on('window-maximize', () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.restore();
+  } else {
+    mainWindow?.maximize();
+  }
+});
+ipcMain.on('window-close', () => mainWindow?.hide());

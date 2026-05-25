@@ -86,6 +86,7 @@ export function useAudioEngine() {
     };
     audioRef.current.onplay = () => {
       if (activeEngineRef.current === 'local') {
+        setIsLoading(false);
         setIsPlaying(true);
         startProgressTracker();
         startTimeSync();
@@ -110,12 +111,17 @@ export function useAudioEngine() {
     // B. Init YouTube IFrame (Online Engine)
     const initPlayer = () => {
       playerRef.current = new window.YT.Player('yt-player-root', {
-        height: '1', width: '1',
+        height: '200', width: '200',
         playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, origin: window.location.origin },
         events: {
           onReady: (event) => {
             event.target.setVolume(volume * 100);
             if (isMuted) event.target.mute();
+            // Prevent iframe from stealing keyboard events (critical for Electron)
+            try {
+              const iframe = document.querySelector('#yt-player-root iframe') as HTMLIFrameElement;
+              if (iframe) iframe.setAttribute('tabindex', '-1');
+            } catch (e) { /* ignore */ }
           },
           onStateChange: (event) => {
             if (activeEngineRef.current !== 'youtube') return;
@@ -129,12 +135,17 @@ export function useAudioEngine() {
                 if (!sessionStartRef.current) sessionStartRef.current = Date.now();
                 break;
               case window.YT.PlayerState.PAUSED:
-                setIsPlaying(false);
-                stopProgressTracker();
-                stopTimeSync();
-                if (sessionStartRef.current) {
-                  recordSession((Date.now() - sessionStartRef.current) / 1000);
-                  sessionStartRef.current = null;
+              case window.YT.PlayerState.CUED:
+              case window.YT.PlayerState.UNSTARTED:
+                setIsLoading(false); // Clear loading state when ready but paused/cued
+                if (event.data === window.YT.PlayerState.PAUSED) {
+                  setIsPlaying(false);
+                  stopProgressTracker();
+                  stopTimeSync();
+                  if (sessionStartRef.current) {
+                    recordSession((Date.now() - sessionStartRef.current) / 1000);
+                    sessionStartRef.current = null;
+                  }
                 }
                 break;
               case window.YT.PlayerState.ENDED:
@@ -200,13 +211,30 @@ export function useAudioEngine() {
       if (Date.now() < ignoreProgressUpdatesRef.current) return;
 
       if (activeEngineRef.current === 'local') {
-        if (audioRef.current && !audioRef.current.paused && audioRef.current.duration > 0) {
-          setProgress(audioRef.current.currentTime / audioRef.current.duration);
+        if (audioRef.current && !audioRef.current.paused) {
+          const aDuration = audioRef.current.duration;
+          // Handle Infinity duration (common with Blobs/streams)
+          if (aDuration > 0 && Number.isFinite(aDuration)) {
+            if (usePlayerStore.getState().duration === 0) {
+              setDuration(aDuration);
+            }
+            setProgress(audioRef.current.currentTime / aDuration);
+          } else if (aDuration === Infinity) {
+            // If Infinity, we can't show a proper slider, but we can update currentTime conceptually 
+            // by setting progress = 0 and relying on a UI fallback if we had one.
+            // For now, avoid NaN progress.
+            setProgress(0);
+          }
         }
       } else {
         if (playerRef.current?.getPlayerState?.() === window.YT.PlayerState.PLAYING) {
           const duration = playerRef.current.getDuration();
-          if (duration > 0) setProgress(playerRef.current.getCurrentTime() / duration);
+          if (duration > 0 && Number.isFinite(duration)) {
+            if (usePlayerStore.getState().duration === 0) {
+              setDuration(duration);
+            }
+            setProgress(playerRef.current.getCurrentTime() / duration);
+          }
         }
       }
     }, PROGRESS_INTERVAL_MS);
@@ -292,7 +320,10 @@ export function useAudioEngine() {
           }
           audioRef.current.src = URL.createObjectURL(blob);
           audioRef.current.load();
-          if (isPlaying) audioRef.current.play().catch(console.error);
+          // CRITICAL: Read isPlaying from store directly (not closure) to avoid stale state bug.
+          // On the very first song, the closure value of isPlaying is false because it captures
+          // the initial state before the store updates to true.
+          if (usePlayerStore.getState().isPlaying) audioRef.current.play().catch(console.error);
         }
       } else {
         // Switch to Online Engine (YouTube)
@@ -359,17 +390,18 @@ export function useAudioEngine() {
   useEffect(() => {
     if (!currentTrack) return;
     
-    if (Math.abs(progress - lastSetProgress.current) > 0.02) {
-      ignoreProgressUpdatesRef.current = Date.now() + 1000;
+    // Only respond to large jumps that indicate user seeking, not engine-driven progress updates
+    if (Math.abs(progress - lastSetProgress.current) > 0.01 && progress !== 0) {
+      ignoreProgressUpdatesRef.current = Date.now() + 1500;
       
       if (activeEngineRef.current === 'local') {
-        if (audioRef.current && audioRef.current.duration > 0) {
+        if (audioRef.current && audioRef.current.duration > 0 && Number.isFinite(audioRef.current.duration)) {
           audioRef.current.currentTime = progress * audioRef.current.duration;
         }
       } else {
         if (playerRef.current?.getDuration) {
           const duration = playerRef.current.getDuration();
-          if (duration > 0) playerRef.current.seekTo(progress * duration, true);
+          if (duration > 0 && Number.isFinite(duration)) playerRef.current.seekTo(progress * duration, true);
         }
       }
     }

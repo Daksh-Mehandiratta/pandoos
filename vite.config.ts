@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import electron from 'vite-plugin-electron';
+import renderer from 'vite-plugin-electron-renderer';
 import path from 'path';
 
 // Custom Vite Plugin to emulate Vercel Node Serverless Functions locally
@@ -74,6 +76,18 @@ export default defineConfig({
   plugins: [
     react(),
     apiProxyPlugin(),
+    electron([
+      {
+        entry: 'electron/main.ts',
+      },
+      {
+        entry: 'electron/preload.ts',
+        onstart(options) {
+          options.reload()
+        },
+      },
+    ]),
+    renderer(),
     VitePWA({
       registerType: 'autoUpdate',
       // workbox pre-caches the app shell so first load is instant offline

@@ -15,6 +15,7 @@ import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
 import { useOfflineStore } from '@/stores/useOfflineStore';
 import { useThemeStore } from '@/stores/useThemeStore';
 import { LevelUpConfetti } from '@/components/ui/LevelUpConfetti';
+import { DesktopTitleBar } from '@/components/layout/DesktopTitleBar';
 
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { VolumeIndicator } from '@/components/ui/VolumeIndicator';
@@ -100,6 +101,7 @@ export function App() {
 
   return (
     <>
+      <DesktopTitleBar />
       <Suspense fallback={null}>
         <RouteTracker />
         <Routes>

@@ -33,10 +33,14 @@ export function useKeyboardShortcuts() {
         case 'ArrowRight':
           e.preventDefault();
           if (e.shiftKey) {
+            // Shift+Right = seek forward 5s
+            if (store.duration > 0) {
+              const newProgress = Math.min(1, store.progress + (5 / store.duration));
+              store.seekTo(newProgress);
+            }
+          } else {
+            // Bare Right = next track (best for desktop app, like Spotify)
             store.nextTrack();
-          } else if (store.duration > 0) {
-            const newProgress = Math.min(1, store.progress + (5 / store.duration));
-            store.seekTo(newProgress);
           }
           break;
         case 'KeyL': // Forward (similar to YouTube)
@@ -47,10 +51,14 @@ export function useKeyboardShortcuts() {
         case 'ArrowLeft':
           e.preventDefault();
           if (e.shiftKey) {
+            // Shift+Left = seek back 5s
+            if (store.duration > 0) {
+              const newProgress = Math.max(0, store.progress - (5 / store.duration));
+              store.seekTo(newProgress);
+            }
+          } else {
+            // Bare Left = previous track (best for desktop app, like Spotify)
             store.prevTrack();
-          } else if (store.duration > 0) {
-            const newProgress = Math.max(0, store.progress - (5 / store.duration));
-            store.seekTo(newProgress);
           }
           break;
         case 'KeyJ': // Backward (similar to YouTube)
@@ -89,10 +97,27 @@ export function useKeyboardShortcuts() {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    // Use 'capture: true' so our handler fires before the iframe can steal the event
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+
+    // Electron Global Media Key bindings
+    if (window.electronAPI) {
+      window.electronAPI.onMediaPlayPause(() => {
+        usePlayerStore.getState().togglePlayPause();
+      });
+      window.electronAPI.onMediaNext(() => {
+        usePlayerStore.getState().nextTrack();
+      });
+      window.electronAPI.onMediaPrev(() => {
+        usePlayerStore.getState().prevTrack();
+      });
+    }
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      if (window.electronAPI) {
+        window.electronAPI.removeMediaListeners();
+      }
     };
   }, []);
 }
