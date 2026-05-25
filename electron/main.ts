@@ -1,3 +1,4 @@
+import './require-polyfill';
 import { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, dialog, Notification } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
