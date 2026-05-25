@@ -13,8 +13,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * always import this instance, never call createClient again.
  */
 export const supabase = createClient(
-  supabaseUrl ?? 'https://placeholder.supabase.co',
-  supabaseAnonKey ?? 'placeholder-key',
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
   {
     auth: {
       // Persist session in localStorage so users stay logged in

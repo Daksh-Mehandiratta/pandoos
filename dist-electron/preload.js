@@ -1,15 +1,17 @@
-import { contextBridge as e, ipcRenderer as t } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 //#region electron/preload.ts
-e.exposeInMainWorld("electronAPI", {
-	minimize: () => t.send("window-minimize"),
-	maximize: () => t.send("window-maximize"),
-	close: () => t.send("window-close"),
-	onMediaPlayPause: (e) => t.on("media-play-pause", () => e()),
-	onMediaNext: (e) => t.on("media-next", () => e()),
-	onMediaPrev: (e) => t.on("media-prev", () => e()),
+contextBridge.exposeInMainWorld("electronAPI", {
+	minimize: () => ipcRenderer.send("window-minimize"),
+	maximize: () => ipcRenderer.send("window-maximize"),
+	close: () => ipcRenderer.send("window-close"),
+	onMediaPlayPause: (callback) => ipcRenderer.on("media-play-pause", () => callback()),
+	onMediaNext: (callback) => ipcRenderer.on("media-next", () => callback()),
+	onMediaPrev: (callback) => ipcRenderer.on("media-prev", () => callback()),
 	removeMediaListeners: () => {
-		t.removeAllListeners("media-play-pause"), t.removeAllListeners("media-next"), t.removeAllListeners("media-prev");
+		ipcRenderer.removeAllListeners("media-play-pause");
+		ipcRenderer.removeAllListeners("media-next");
+		ipcRenderer.removeAllListeners("media-prev");
 	},
-	notifySongChange: (e) => t.send("notify-song", e)
+	notifySongChange: (track) => ipcRenderer.send("notify-song", track)
 });
 //#endregion
