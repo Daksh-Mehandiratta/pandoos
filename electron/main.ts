@@ -104,12 +104,9 @@ function createWindow() {
   });
   // ───────────────────────────────────────────────────────────────────────────
 
-  // Hide instead of close to keep playing in background
-  mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
-      event.preventDefault();
-      mainWindow?.hide();
-    }
+  // Completely close the app when the main window is closed
+  mainWindow.on('close', () => {
+    app.isQuitting = true;
   });
 }
 
@@ -223,7 +220,10 @@ ipcMain.on('window-maximize', () => {
     mainWindow?.maximize();
   }
 });
-ipcMain.on('window-close', () => mainWindow?.hide());
+ipcMain.on('window-close', () => {
+  app.isQuitting = true;
+  app.quit();
+});
 
 // OS Notification for Song Change
 ipcMain.on('notify-song', (_, track) => {
