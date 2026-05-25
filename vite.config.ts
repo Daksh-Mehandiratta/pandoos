@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import electron from 'vite-plugin-electron';
 import renderer from 'vite-plugin-electron-renderer';
 import path from 'path';
+import fs from 'fs';
 
 // Custom Vite Plugin to emulate Vercel Node Serverless Functions locally
 const apiProxyPlugin = () => ({
@@ -68,6 +69,19 @@ const apiProxyPlugin = () => ({
   }
 });
 
+// Copies electron/preload.cjs → dist-electron/preload.cjs without any compilation.
+// vite-plugin-electron outputs ESM 'import' even when format:'cjs' is set,
+// which breaks Electron. A direct copy of our hand-written CJS file is the fix.
+const copyPreloadPlugin = () => ({
+  name: 'copy-preload',
+  closeBundle() {
+    const src  = path.resolve(__dirname, 'electron', 'preload.cjs');
+    const dest = path.resolve(__dirname, 'dist-electron', 'preload.cjs');
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(src, dest);
+    console.log('[copy-preload] Copied preload.cjs →', dest);
+  },
+});
 
 // https://vitejs.dev/config/
 // Path aliases are critical for Capacitor: avoids "../../../" hell in deep components
@@ -94,25 +108,10 @@ export default defineConfig({
           },
         },
       },
-      {
-        // Preload MUST be CommonJS — Electron cannot load ESM preloads
-        // Output as .cjs so Node ignores the "type":"module" in package.json
-        entry: 'electron/preload.ts',
-        onstart(options) {
-          options.reload();
-        },
-        vite: {
-          build: {
-            rollupOptions: {
-              output: {
-                format: 'cjs',
-                entryFileNames: '[name].cjs',
-              },
-            },
-          },
-        },
-      },
+      // NOTE: preload is NOT compiled by vite-plugin-electron.
+      // It is copied as-is from electron/preload.cjs by copyPreloadPlugin below.
     ]),
+    copyPreloadPlugin(),
     renderer(),
     VitePWA({
       registerType: 'autoUpdate',
