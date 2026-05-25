@@ -301,6 +301,11 @@ export function useAudioEngine() {
   useEffect(() => {
     if (!currentTrack) return;
     
+    // Trigger OS Notification
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.notifySongChange) {
+      (window as any).electronAPI.notifySongChange(currentTrack);
+    }
+
     setIsLoading(true);
 
     getTrackBlob(currentTrack.videoId).then((blob) => {

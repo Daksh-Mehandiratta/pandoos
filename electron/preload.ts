@@ -17,5 +17,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('media-play-pause');
     ipcRenderer.removeAllListeners('media-next');
     ipcRenderer.removeAllListeners('media-prev');
-  }
+  },
+
+  // Notifications
+  notifySongChange: (track: any) => ipcRenderer.send('notify-song', track),
 });

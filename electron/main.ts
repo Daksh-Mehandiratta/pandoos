@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, dialog, Notification } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -53,7 +53,7 @@ function createWindow() {
     transparent: true, // Allows rounded corners or glassy effects
     backgroundColor: '#00000000',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       backgroundThrottling: false, // Keep playing music when minimized!
@@ -163,3 +163,14 @@ ipcMain.on('window-maximize', () => {
   }
 });
 ipcMain.on('window-close', () => mainWindow?.hide());
+
+// OS Notification for Song Change
+ipcMain.on('notify-song', (_, track) => {
+  if (Notification.isSupported() && track) {
+    new Notification({
+      title: 'Now Playing',
+      body: `${track.title} • ${track.artist}`,
+      silent: true, // No annoying ding sound
+    }).show();
+  }
+});

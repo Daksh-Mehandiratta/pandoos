@@ -9,6 +9,7 @@ e.exposeInMainWorld("electronAPI", {
 	onMediaPrev: (e) => t.on("media-prev", () => e()),
 	removeMediaListeners: () => {
 		t.removeAllListeners("media-play-pause"), t.removeAllListeners("media-next"), t.removeAllListeners("media-prev");
-	}
+	},
+	notifySongChange: (e) => t.send("notify-song", e)
 });
 //#endregion
