@@ -4,41 +4,31 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet } from 'react-native';
 
-// Placeholder Screens
-const HomeScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.text}>Home - Pandoos Native</Text>
-  </View>
-);
-
-const SearchScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.text}>Search</Text>
-  </View>
-);
-
-const LibraryScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.text}>Library</Text>
-  </View>
-);
+// Themes and Screens
+import { NavigationTheme, PANDA_THEME } from './src/theme';
+import HomeScreen from './src/screens/HomeScreen';
+import SearchScreen from './src/screens/SearchScreen';
+import LibraryScreen from './src/screens/LibraryScreen';
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer theme={NavigationTheme}>
         <Tab.Navigator
           screenOptions={{
-            headerStyle: { backgroundColor: '#0a0a0f' },
-            headerTintColor: '#fff',
-            tabBarStyle: { backgroundColor: '#0a0a0f', borderTopColor: '#222' },
-            tabBarActiveTintColor: '#1DB954',
-            tabBarInactiveTintColor: '#888',
+            headerStyle: { backgroundColor: PANDA_THEME.colors.obsidian },
+            headerTintColor: PANDA_THEME.colors.snow,
+            tabBarStyle: { 
+              backgroundColor: PANDA_THEME.colors.obsidian, 
+              borderTopColor: PANDA_THEME.colors.surface 
+            },
+            tabBarActiveTintColor: PANDA_THEME.colors.bamboo,
+            tabBarInactiveTintColor: PANDA_THEME.colors.muted,
           }}
         >
-          <Tab.Screen name="Home" component={HomeScreen} />
+          <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Tab.Screen name="Search" component={SearchScreen} />
           <Tab.Screen name="Library" component={LibraryScreen} />
         </Tab.Navigator>
@@ -50,12 +40,12 @@ export default function App() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: PANDA_THEME.colors.obsidian,
     justifyContent: 'center',
     alignItems: 'center',
   },
   text: {
-    color: '#ffffff',
+    color: PANDA_THEME.colors.snow,
     fontSize: 20,
     fontWeight: 'bold',
   }
