@@ -22,7 +22,8 @@
     "dist": "npm run generate-icon && npm run build && electron-builder",
     "dist:win": "npm run generate-icon && npm run build && electron-builder --win",
     "dist:mac": "npm run generate-icon && npm run build && electron-builder --mac",
-    "dist:linux": "npm run generate-icon && npm run build && electron-builder --linux"
+    "dist:linux": "npm run generate-icon && npm run build && electron-builder --linux",
+    "postinstall": "patch-package"
   },
   "build": {
     "appId": "com.pandoos.music",
@@ -114,6 +115,7 @@
     "@upstash/redis": "^1.38.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "expo": "~56.0.5",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
     "howler": "^2.2.4",
@@ -123,10 +125,12 @@
     "m3u8stream": "^0.8.6",
     "miniget": "^4.2.3",
     "node-vibrant": "^4.0.4",
+    "patch-package": "^8.0.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-helmet-async": "^3.0.0",
     "react-hook-form": "^7.76.0",
+    "react-native": "0.85.3",
     "react-router-dom": "^7.15.1",
     "sax": "^1.6.0",
     "tailwind-merge": "^3.6.0",
