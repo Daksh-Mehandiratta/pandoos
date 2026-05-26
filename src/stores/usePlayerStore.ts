@@ -29,6 +29,12 @@ interface PlayerState {
   progress: number;
   /** Track duration in seconds (set by audio engine once video loads) */
   duration: number;
+  /**
+   * Monotonically increasing counter — incremented ONLY by seekTo(), never by setProgress().
+   * The audio engine watches this to detect user-initiated seeks unambiguously,
+   * eliminating the fragile delta-threshold heuristic that caused first-song seek bugs.
+   */
+  seekVersion: number;
   /** Recently played — capped at 50 */
   history: Track[];
   /** True while YouTube player is loading/buffering */
@@ -133,6 +139,7 @@ export const usePlayerStore = create<PlayerStore>()(
       isLooping: false,
       isShuffling: false,
       progress: 0,
+      seekVersion: 0,
       duration: 0,
       history: [],
       isLoading: false,
@@ -247,7 +254,10 @@ export const usePlayerStore = create<PlayerStore>()(
       },
 
       seekTo: (progress) => {
-        set((state) => { state.progress = progress; });
+        set((state) => {
+          state.progress = progress;
+          state.seekVersion += 1; // signal to audio engine: this is a USER seek
+        });
       },
 
       setVolume: (volume) => {

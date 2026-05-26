@@ -12,6 +12,10 @@ interface UIState {
   closeArtist: () => void;
   openAlbum: (id: string) => void;
   closeAlbum: () => void;
+  isChatOpen: boolean;
+  chatInitialMessage: string;
+  openChat: (initialMessage?: string) => void;
+  closeChat: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -19,6 +23,8 @@ export const useUIStore = create<UIState>((set) => ({
   isQueueOpen: false,
   activeArtistId: null,
   activeAlbumId: null,
+  isChatOpen: false,
+  chatInitialMessage: '',
   openPlayer: () => set({ isPlayerOpen: true }),
   closePlayer: () => set({ isPlayerOpen: false }),
   toggleQueue: () => set((state) => ({ isQueueOpen: !state.isQueueOpen })),
@@ -26,5 +32,7 @@ export const useUIStore = create<UIState>((set) => ({
   closeArtist: () => set({ activeArtistId: null }),
   openAlbum: (id) => set({ activeAlbumId: id }),
   closeAlbum: () => set({ activeAlbumId: null }),
+  openChat: (initialMessage?: string) => set({ isChatOpen: true, chatInitialMessage: initialMessage || '' }),
+  closeChat: () => set({ isChatOpen: false }),
 }));
 

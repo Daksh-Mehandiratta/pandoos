@@ -33,7 +33,7 @@ export function PandaMascot({ className, size = 120, emotion = 'neutral' }: Pand
 
   return (
     <div
-      className={cn("relative flex items-center justify-center pointer-events-none drop-shadow-2xl", className)}
+      className={cn("relative flex items-center justify-center pointer-events-none", className)}
       style={{ width: size, height: size }}
     >
       <motion.svg
@@ -41,6 +41,7 @@ export function PandaMascot({ className, size = 120, emotion = 'neutral' }: Pand
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="w-full h-full"
+        style={{ willChange: 'transform' }}
         animate={state === 'nodding' ? { y: [0, -4, 0] } : { y: 0 }}
         transition={state === 'nodding' ? { repeat: Infinity, duration: 0.5, ease: "easeInOut" } : { duration: 0.5 }}
       >

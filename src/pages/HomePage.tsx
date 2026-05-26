@@ -14,7 +14,6 @@ import { useBeastOracle } from '@/features/search/hooks/useBeastOracle';
 import { TrackImage } from '@/components/shared/TrackImage';
 import type { Track, Artist } from '@/types/track';
 import { useInView } from '@/hooks/useInView';
-import { PandaChatModal } from '@/features/panda/components/PandaChatModal';
 import { useWeatherContext } from '@/hooks/useWeatherContext';
 
 // Stable session seed so shuffles are consistent until page refresh
@@ -72,10 +71,7 @@ export function HomePage() {
     setCustomQuery(suggestedMood.query);
   }, [weather.isLoading, weather.error, hasManuallyChangedMood]);
 
-  // Panda Chat State
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInitialMessage, setChatInitialMessage] = useState('');
-
+  const openChat = useUIStore(s => s.openChat);
   const playTrack = usePlayerStore(s => s.playTrack);
   const history = usePlayerStore(s => s.history);
   const currentTrack = usePlayerStore(s => s.currentTrack);
@@ -236,8 +232,7 @@ export function HomePage() {
   const handleChatSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
-    setChatInitialMessage(userInput);
-    setIsChatOpen(true);
+    openChat(userInput);
     setUserInput('');
   };
 
@@ -289,7 +284,7 @@ export function HomePage() {
           animate={{ scale: 1, opacity: 1 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsChatOpen(true)}
+          onClick={() => openChat()}
           className="relative w-32 h-32 md:w-40 md:h-40 rounded-full glass-mood border border-white/20 flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.15)] mb-6 cursor-pointer group"
         >
           <PandaMascot size={110} emotion={selectedMood.id} />
@@ -501,12 +496,6 @@ export function HomePage() {
       </div>
 
       <PandaFooter />
-
-      <PandaChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        initialMessage={chatInitialMessage}
-      />
     </div>
   );
 }

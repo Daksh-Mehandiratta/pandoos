@@ -2,13 +2,18 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { usePlayerStore } from '@/stores/usePlayerStore';
+import { useUIStore } from '@/stores/useUIStore';
 
 // We will build DesktopPlayer and DesktopFullscreenPlayer next
 import { MiniPlayer } from '@/features/player/components/MiniPlayer';
 import { FullscreenPlayer } from '@/features/player/components/FullscreenPlayer';
+import { PandaChatModal } from '@/features/panda/components/PandaChatModal';
 
 export function DesktopLayout() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
+  const isChatOpen = useUIStore((state) => state.isChatOpen);
+  const closeChat = useUIStore((state) => state.closeChat);
+  const chatInitialMessage = useUIStore((state) => state.chatInitialMessage);
 
   return (
     <div className="flex h-screen w-full bg-surface-base overflow-hidden relative">
@@ -35,6 +40,13 @@ export function DesktopLayout() {
 
       {/* The Fullscreen Player overlays everything when active */}
       <FullscreenPlayer />
+
+      {/* Global Panda Chat Modal */}
+      <PandaChatModal
+        isOpen={isChatOpen}
+        onClose={closeChat}
+        initialMessage={chatInitialMessage}
+      />
     </div>
   );
 }

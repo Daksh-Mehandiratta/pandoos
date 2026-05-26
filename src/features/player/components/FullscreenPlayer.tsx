@@ -23,24 +23,41 @@ import { getRecommendations } from '@/services/recommendEngine';
 
 function DesktopQueueItem({ track, absoluteIndex, queue, playTrack, removeFromQueue, handleDragEnd }: any) {
   const dragControls = useDragControls();
+  const [isDragging, setIsDragging] = React.useState(false);
 
   return (
     <Reorder.Item
       value={track}
-      onDragEnd={handleDragEnd}
+      onDragStart={() => setIsDragging(true)}
+      onDragEnd={() => { setIsDragging(false); handleDragEnd(); }}
       dragListener={false}
       dragControls={dragControls}
-      className="flex items-center gap-3 p-2 rounded-xl transition-all group relative overflow-hidden hover:bg-white/10 bg-transparent"
-      whileDrag={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.1)", zIndex: 50, boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}
+      layout
+      layoutId={track.videoId}
+      transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="flex items-center gap-2.5 px-2 py-2 rounded-xl group relative select-none"
+      style={{
+        background: isDragging ? 'rgba(255,255,255,0.12)' : 'transparent',
+        boxShadow: isDragging ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.15)' : 'none',
+        scale: isDragging ? 1.02 : 1,
+        zIndex: isDragging ? 99 : 'auto',
+        transition: isDragging ? 'none' : 'background 0.2s ease, box-shadow 0.2s ease',
+      }}
     >
+      {/* Drag Handle — always visible, clearly a handle */}
       <div
-        className="text-white/20 hover:text-white/50 cursor-grab active:cursor-grabbing touch-none flex items-center justify-center shrink-0"
-        onPointerDown={(e) => dragControls.start(e)}
-        style={{ touchAction: "none" }}
+        className="shrink-0 flex flex-col items-center justify-center gap-[3px] px-1 py-2 cursor-grab active:cursor-grabbing touch-none rounded-md hover:bg-white/10 transition-colors"
+        onPointerDown={(e) => { e.preventDefault(); dragControls.start(e); }}
+        style={{ touchAction: 'none' }}
+        title="Drag to reorder"
       >
-        <GripVertical size={16} />
+        {/* Three-line drag indicator (more intuitive than a single grip icon) */}
+        <span className="block w-3.5 h-[2px] rounded-full bg-white/30 group-hover:bg-white/60 transition-colors" />
+        <span className="block w-3.5 h-[2px] rounded-full bg-white/30 group-hover:bg-white/60 transition-colors" />
+        <span className="block w-3.5 h-[2px] rounded-full bg-white/30 group-hover:bg-white/60 transition-colors" />
       </div>
 
+      {/* Thumbnail */}
       <div
         className="relative w-10 h-10 shrink-0 cursor-pointer rounded-lg overflow-hidden shadow-md"
         onClick={() => playTrack(track, queue)}
@@ -51,36 +68,31 @@ function DesktopQueueItem({ track, absoluteIndex, queue, playTrack, removeFromQu
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <Play size={16} className="text-white fill-white" />
+          <Play size={14} className="text-white fill-white" />
         </div>
       </div>
 
+      {/* Track info */}
       <div
         className="flex-1 min-w-0 flex flex-col justify-center cursor-pointer"
         onClick={() => playTrack(track, queue)}
       >
-        <h4 className="text-sm font-bold truncate text-white">
-          {track.title}
-        </h4>
-        <p className="text-xs text-white/50 truncate">
-          {track.artist}
-        </p>
+        <h4 className="text-sm font-semibold truncate text-white leading-tight">{track.title}</h4>
+        <p className="text-xs text-white/40 truncate mt-0.5">{track.artist}</p>
       </div>
 
-      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (absoluteIndex >= 0) removeFromQueue(absoluteIndex);
-          }}
-          className="p-1.5 rounded-full text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
+      {/* Delete button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); if (absoluteIndex >= 0) removeFromQueue(absoluteIndex); }}
+        className="shrink-0 p-1.5 rounded-full text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
+        title="Remove"
+      >
+        <Trash2 size={13} />
+      </button>
     </Reorder.Item>
   );
 }
+
 
 export function FullscreenPlayer() {
   const currentTrack = usePlayerStore((state) => state.currentTrack);
