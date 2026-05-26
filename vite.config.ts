@@ -175,6 +175,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      // Map @/stores to the shared package to preserve existing imports during monorepo transition
+      '@/stores': path.resolve(__dirname, './packages/shared/src/stores'),
       // '@/' maps to src/ — consistent across all files and Capacitor builds
       '@': path.resolve(__dirname, './src'),
     },

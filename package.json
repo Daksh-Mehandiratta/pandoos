@@ -8,6 +8,10 @@
     "email": "rajvansh2525@gmail.com"
   },
   "type": "module",
+  "workspaces": [
+    "mobile",
+    "packages/*"
+  ],
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
