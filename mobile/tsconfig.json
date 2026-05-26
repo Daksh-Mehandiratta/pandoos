@@ -4,7 +4,10 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@pandoos/shared/*": ["../packages/shared/src/*"]
-    }
+      "@pandoos/shared/*": ["../packages/shared/src/*"],
+      "@/stores/*": ["../packages/shared/src/stores/*"],
+      "@/*": ["../src/*"]
+    },
+    "ignoreDeprecations": "6.0"
   }
 }

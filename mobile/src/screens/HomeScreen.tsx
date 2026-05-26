@@ -2,8 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { PANDA_THEME } from '../theme';
 import { usePlayerStore } from '@pandoos/shared/stores/usePlayerStore';
+import { useSyncPlayerState } from '../hooks/useSyncPlayerState';
 
 export default function HomeScreen() {
+  useSyncPlayerState(); // Keeps TrackPlayer and Zustand in perfect sync
   const { currentTrack, isPlaying, togglePlayPause } = usePlayerStore();
 
   return (

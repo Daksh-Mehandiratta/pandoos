@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,10 +9,29 @@ import { NavigationTheme, PANDA_THEME } from './src/theme';
 import HomeScreen from './src/screens/HomeScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import LibraryScreen from './src/screens/LibraryScreen';
+import { setupPlayer } from './src/services/setupPlayer';
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+
+  useEffect(() => {
+    async function setup() {
+      const isSetup = await setupPlayer();
+      setIsPlayerReady(isSetup);
+    }
+    setup();
+  }, []);
+
+  if (!isPlayerReady) {
+    return (
+      <View style={styles.screen}>
+        <Text style={styles.text}>Loading Panda Audio Engine...</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={NavigationTheme}>
