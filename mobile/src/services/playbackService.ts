@@ -1,10 +1,10 @@
 import TrackPlayer, { Event } from 'react-native-track-player';
+import { usePlayerStore } from '@pandoos/shared/stores/usePlayerStore';
 
-// This service needs to be registered for the background audio engine to work
 export const playbackService = async () => {
-  TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
-  TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
-  TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
-  TrackPlayer.addEventListener(Event.RemotePrevious, () => TrackPlayer.skipToPrevious());
-  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.reset());
+  TrackPlayer.addEventListener(Event.RemotePlay, () => usePlayerStore.getState().resumeTrack());
+  TrackPlayer.addEventListener(Event.RemotePause, () => usePlayerStore.getState().pauseTrack());
+  TrackPlayer.addEventListener(Event.RemoteNext, () => usePlayerStore.getState().nextTrack());
+  TrackPlayer.addEventListener(Event.RemotePrevious, () => usePlayerStore.getState().prevTrack());
+  TrackPlayer.addEventListener(Event.RemoteSeek, ({ position }) => usePlayerStore.getState().seekTo(position));
 };

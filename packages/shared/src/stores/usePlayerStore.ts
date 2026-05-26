@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import type { Track } from '@/types/track';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { useUIStore } from '@/stores/useUIStore';
@@ -111,6 +111,16 @@ const MAX_HISTORY = 50;
 // ─────────────────────────────────────────────
 // Store
 // ─────────────────────────────────────────────
+
+const dummyStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
+
+const customStorage = createJSONStorage(() =>
+  typeof window !== 'undefined' && window.localStorage ? window.localStorage : dummyStorage
+);
 
 /**
  * usePlayerStore — Central music player state.
@@ -410,6 +420,7 @@ export const usePlayerStore = create<PlayerStore>()(
         isShuffling: state.isShuffling,
         history: state.history,
       }),
+      storage: customStorage,
     }
   )
 );

@@ -1,15 +1,24 @@
-import TrackPlayer, { AppKilledPlaybackBehavior, Capability } from 'react-native-track-player';
+import TrackPlayer, {
+  AppKilledPlaybackBehavior,
+  Capability,
+  RepeatMode,
+} from 'react-native-track-player';
 
-export const setupPlayer = async () => {
+/**
+ * Configures the native audio session for background music playback using react-native-track-player.
+ * Must be called once on app startup before any audio is played.
+ */
+export const setupPlayer = async (): Promise<boolean> => {
   let isSetup = false;
   try {
+    // This method will only reject if player has not been setup yet
     await TrackPlayer.getCurrentTrack();
     isSetup = true;
   } catch {
     await TrackPlayer.setupPlayer();
     await TrackPlayer.updateOptions({
       android: {
-        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback
+        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback,
       },
       capabilities: [
         Capability.Play,
@@ -23,7 +32,9 @@ export const setupPlayer = async () => {
         Capability.Pause,
         Capability.SkipToNext,
       ],
+      progressUpdateEventInterval: 2,
     });
+    await TrackPlayer.setRepeatMode(RepeatMode.Off);
     isSetup = true;
   } finally {
     return isSetup;

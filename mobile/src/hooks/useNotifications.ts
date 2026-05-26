@@ -43,8 +43,13 @@ export function useNotifications(
       });
     }
 
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
-    return token;
+    try {
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      return token;
+    } catch (e) {
+      console.warn('[Notifications] Firebase not configured for push tokens:', e);
+      return null;
+    }
   };
 
   useEffect(() => {

@@ -28,11 +28,17 @@ export default function App() {
 
   useEffect(() => {
     async function setup() {
-      // 1. Initialize native audio engine
-      const isSetup = await setupPlayer();
-      setIsPlayerReady(isSetup);
-      // 2. Initialize offline download directory
-      await initDownloadDir();
+      try {
+        // 1. Initialize native audio engine
+        const isSetup = await setupPlayer();
+        setIsPlayerReady(isSetup);
+        
+        // 2. Initialize offline download directory
+        await initDownloadDir();
+      } catch (e) {
+        console.error("Setup failed:", e);
+        setIsPlayerReady(true); // Fallback so it doesn't get stuck
+      }
     }
     setup();
   }, []);
@@ -47,7 +53,7 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ flex: 1 }}>
       <NavigationContainer theme={NavigationTheme}>
         <Tab.Navigator
           screenOptions={{
@@ -99,9 +105,9 @@ const styles = StyleSheet.create({
     fontSize: 64,
   },
   text: {
-    color: PANDA_THEME.colors.muted,
+    color: PANDA_THEME.colors.snow,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   nowPlayingFab: {
     position: 'absolute',

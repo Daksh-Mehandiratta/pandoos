@@ -1,15 +1,18 @@
-import React, { useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  Dimensions,
-  Animated,
-  PanResponder,
-  StatusBar,
-} from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Dimensions, StatusBar, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  withRepeat, 
+  withSpring,
+  Easing,
+  runOnJS
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { usePlayerStore } from '@pandoos/shared/stores/usePlayerStore';
 import { PANDA_THEME } from '../theme';
 
@@ -20,58 +23,62 @@ interface NowPlayingScreenProps {
 }
 
 export default function NowPlayingScreen({ onClose }: NowPlayingScreenProps) {
-  // ✅ Use correct store method names: nextTrack/prevTrack (not playNext/playPrev)
-  const { currentTrack, isPlaying, togglePlayPause, nextTrack, prevTrack, progress, duration } =
-    usePlayerStore();
+  const { currentTrack, isPlaying, togglePlayPause, nextTrack, prevTrack, progress, duration } = usePlayerStore();
 
-  // Swipe-down to close gesture
-  const translateY = useRef(new Animated.Value(0)).current;
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy > 0) translateY.setValue(gestureState.dy);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 100) {
-          Animated.timing(translateY, {
-            toValue: SCREEN_HEIGHT,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(onClose);
-        } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
+  const rotation = useSharedValue(0);
+  const translateY = useSharedValue(0);
 
-  // Animated rotating album art
-  const rotation = useRef(new Animated.Value(0)).current;
-  const rotationLoop = useRef<Animated.CompositeAnimation | null>(null);
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (isPlaying) {
-      rotationLoop.current = Animated.loop(
-        Animated.timing(rotation, {
-          toValue: 1,
-          duration: 12000,
-          useNativeDriver: true,
-        })
+      rotation.value = withRepeat(
+        withTiming(rotation.value + 360, { duration: 12000, easing: Easing.linear }),
+        -1,
+        false
       );
-      rotationLoop.current.start();
     } else {
-      rotationLoop.current?.stop();
+      const currentRotation = rotation.value;
+      rotation.value = currentRotation;
     }
   }, [isPlaying]);
 
-  const spin = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  const animatedArtStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }]
+  }));
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+      }
+    })
+    .onEnd((event) => {
+      if (event.translationY > 150 || event.velocityY > 1000) {
+        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250 }, () => {
+          runOnJS(onClose)();
+        });
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 200 });
+      }
+    });
+
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }]
+  }));
+
+  const handlePlayPause = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    togglePlayPause();
+  };
+
+  const handleNext = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    nextTrack();
+  };
+
+  const handlePrev = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    prevTrack();
+  };
 
   const progressPercent = duration > 0 ? (progress / duration) : 0;
   const formatTime = (s: number) => {
@@ -80,85 +87,99 @@ export default function NowPlayingScreen({ onClose }: NowPlayingScreenProps) {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // ✅ Use correct Track field: albumArt (not thumbnail)
-  const artUri = currentTrack?.albumArt ?? 'https://i.pravatar.cc/400';
+  const artUri = (currentTrack as any)?.albumArt || (currentTrack as any)?.thumbnail || 'https://i.pravatar.cc/400';
 
   return (
-    // ✅ Use StyleSheet.absoluteFill (not absoluteFillObject)
-    <Animated.View
-      style={[StyleSheet.absoluteFill, styles.container, { transform: [{ translateY }] }]}
-      {...panResponder.panHandlers}
-    >
-      <StatusBar barStyle="light-content" />
+    <GestureHandlerRootView style={StyleSheet.absoluteFill}>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[StyleSheet.absoluteFill, styles.container, animatedContainerStyle]}>
+          <StatusBar barStyle="light-content" />
+          
+          <LinearGradient
+            colors={[PANDA_THEME.colors.obsidian, '#0a1a0f', PANDA_THEME.colors.obsidian]}
+            style={StyleSheet.absoluteFill}
+          />
 
-      {/* Drag handle */}
-      <View style={styles.dragHandle} />
+          <View style={styles.content}>
+            <View style={styles.dragHandle} />
+            <Text style={styles.watermark}>🐼 Panda Audio Engine</Text>
 
-      {/* Album Art — rotating disk */}
-      <View style={styles.artContainer}>
-        <Animated.Image
-          source={{ uri: artUri }}
-          style={[styles.albumArt, { transform: [{ rotate: spin }] }]}
-        />
-        {/* Center hole for vinyl effect */}
-        <View style={styles.vinylHole} />
-      </View>
+            <View style={styles.artContainer}>
+              <Animated.View style={[styles.albumArtWrapper, animatedArtStyle]}>
+                <Image
+                  source={{ uri: artUri }}
+                  style={styles.albumArt}
+                  contentFit="cover"
+                  transition={500}
+                />
+              </Animated.View>
+              <View style={styles.vinylHole} />
+            </View>
 
-      {/* Track Info */}
-      <View style={styles.trackInfo}>
-        <Text style={styles.trackTitle} numberOfLines={1}>
-          {currentTrack?.title ?? 'Nothing playing'}
-        </Text>
-        <Text style={styles.artistName} numberOfLines={1}>
-          {currentTrack?.artist ?? 'Select a track'}
-        </Text>
-      </View>
+            <View style={styles.trackInfo}>
+              <Text style={styles.trackTitle} numberOfLines={1}>
+                {currentTrack?.title ?? 'Nothing playing 🐼'}
+              </Text>
+              <Text style={styles.artistName} numberOfLines={1}>
+                {currentTrack?.artist ?? 'Select a track'}
+              </Text>
+            </View>
 
-      {/* Progress Bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progressPercent * 100}%` }]} />
-          <View style={[styles.progressDot, { left: `${progressPercent * 100}%` }]} />
-        </View>
-        <View style={styles.timeRow}>
-          <Text style={styles.timeText}>{formatTime(progress ?? 0)}</Text>
-          <Text style={styles.timeText}>{formatTime(duration ?? 0)}</Text>
-        </View>
-      </View>
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${progressPercent * 100}%` }]} />
+                <View style={[styles.progressDot, { left: `${progressPercent * 100}%` }]} />
+              </View>
+              <View style={styles.timeRow}>
+                <Text style={styles.timeText}>{formatTime(progress ?? 0)}</Text>
+                <Text style={styles.timeText}>{formatTime(duration ?? 0)}</Text>
+              </View>
+            </View>
 
-      {/* Controls */}
-      <View style={styles.controls}>
-        {/* ✅ prevTrack / nextTrack are the correct store actions */}
-        <TouchableOpacity style={styles.controlBtn} onPress={prevTrack}>
-          <Text style={styles.controlIcon}>⏮</Text>
-        </TouchableOpacity>
+            <View style={styles.controls}>
+              <TouchableOpacity style={styles.controlBtn} onPress={handlePrev}>
+                <Text style={styles.controlIcon}>⏮</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity style={styles.playPauseBtn} onPress={togglePlayPause}>
-          <Text style={styles.playPauseIcon}>{isPlaying ? '⏸' : '▶'}</Text>
-        </TouchableOpacity>
+              <TouchableOpacity style={styles.playPauseBtn} onPress={handlePlayPause}>
+                <Text style={styles.playPauseIcon}>{isPlaying ? '⏸' : '▶'}</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity style={styles.controlBtn} onPress={nextTrack}>
-          <Text style={styles.controlIcon}>⏭</Text>
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
+              <TouchableOpacity style={styles.controlBtn} onPress={handleNext}>
+                <Text style={styles.controlIcon}>⏭</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      </GestureDetector>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: PANDA_THEME.colors.obsidian,
+    zIndex: 999,
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     paddingHorizontal: PANDA_THEME.spacing.l,
     paddingTop: 60,
-    zIndex: 999,
   },
   dragHandle: {
     width: 48,
     height: 5,
     borderRadius: 3,
-    backgroundColor: PANDA_THEME.colors.muted,
-    marginBottom: PANDA_THEME.spacing.l,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginBottom: PANDA_THEME.spacing.m,
+  },
+  watermark: {
+    color: PANDA_THEME.colors.bamboo,
+    opacity: 0.8,
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   artContainer: {
     position: 'relative',
@@ -167,13 +188,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: PANDA_THEME.spacing.xl,
+    shadowColor: PANDA_THEME.colors.bamboo,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 30,
+    elevation: 20,
+  },
+  albumArtWrapper: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(30, 215, 96, 0.3)',
   },
   albumArt: {
     width: '100%',
     height: '100%',
-    borderRadius: 9999,
-    borderWidth: 4,
-    borderColor: PANDA_THEME.colors.bamboo,
   },
   vinylHole: {
     position: 'absolute',
@@ -182,46 +213,47 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: PANDA_THEME.colors.obsidian,
     borderWidth: 2,
-    borderColor: PANDA_THEME.colors.muted,
+    borderColor: '#333',
   },
   trackInfo: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: PANDA_THEME.spacing.m,
+    marginBottom: PANDA_THEME.spacing.l,
   },
   trackTitle: {
     color: PANDA_THEME.colors.snow,
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '800',
     textAlign: 'center',
   },
   artistName: {
-    color: PANDA_THEME.colors.muted,
+    color: PANDA_THEME.colors.bamboo,
     fontSize: 16,
-    marginTop: 4,
+    fontWeight: '600',
+    marginTop: 6,
   },
   progressContainer: {
     width: '100%',
     marginVertical: PANDA_THEME.spacing.m,
   },
   progressBar: {
-    height: 4,
-    backgroundColor: PANDA_THEME.colors.surface,
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 3,
     position: 'relative',
   },
   progressFill: {
     height: '100%',
     backgroundColor: PANDA_THEME.colors.bamboo,
-    borderRadius: 2,
+    borderRadius: 3,
   },
   progressDot: {
     position: 'absolute',
-    top: -5,
+    top: -4,
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: PANDA_THEME.colors.bamboo,
+    backgroundColor: PANDA_THEME.colors.snow,
     marginLeft: -7,
     shadowColor: PANDA_THEME.colors.bamboo,
     shadowOffset: { width: 0, height: 0 },
@@ -232,18 +264,19 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 10,
   },
   timeText: {
-    color: PANDA_THEME.colors.muted,
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
+    fontWeight: '600',
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 32,
-    marginTop: PANDA_THEME.spacing.l,
+    gap: 40,
+    marginTop: PANDA_THEME.spacing.xl,
   },
   controlBtn: {
     padding: PANDA_THEME.spacing.s,
@@ -253,20 +286,20 @@ const styles = StyleSheet.create({
     color: PANDA_THEME.colors.snow,
   },
   playPauseBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: PANDA_THEME.colors.bamboo,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: PANDA_THEME.colors.bamboo,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.6,
     shadowRadius: 20,
     elevation: 10,
   },
   playPauseIcon: {
-    fontSize: 28,
+    fontSize: 32,
     color: PANDA_THEME.colors.obsidian,
   },
 });
