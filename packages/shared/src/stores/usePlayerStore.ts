@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import type { Track } from '@/types/track';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { useUIStore } from '@/stores/useUIStore';
